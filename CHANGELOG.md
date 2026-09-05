@@ -4,10 +4,6 @@ CHANGELOG
 Unreleased
 ----------
 
-First release of `hampel/close-api`. It replaces `hampel/close`, which is
-abandoned; it shares no code with it and there is no upgrade path, only a
-rewrite of the calling code.
-
 **Added**
 
 * `Http\Transport` — one PSR-18 choke point for every request, owning the base
@@ -19,8 +15,7 @@ rewrite of the calling code.
   iteration and `count()` over the decoded body, plus the status, the rate limit
   state, `hasMore()` and `cursor()`
 * `Http\RateLimit`, parsing Close's `RateLimit: limit=…, remaining=…, reset=…`
-  header, including the decimal `reset` the older integer-shaped headers did not
-  carry
+  header, including the decimal `reset`
 * `Http\DefaultRetryPolicy` — always retries a 429 for the interval Close names;
   retries 5xx and connection failures on idempotent methods only, with
   exponential backoff and full jitter; retries nothing else
@@ -44,11 +39,9 @@ rewrite of the calling code.
   returning a truncated result that looks complete, and reporting
   `CursorExpiredException` when more than the documented 30 seconds passed
   between pages
-* `spec/ENDPOINTS.md`, a generated inventory of all 302 operations Close
-  publishes, and `spec/build-inventory.php` to regenerate it
 
 **Known limits**
 
-* Nothing in this release has been run against the live Close API. See the
-  closing section of `DESIGN.md` for the specific questions that remain open,
-  the error body's shape chief among them
+* Nothing in this release has been run against the live Close API. The
+  [design notes](https://github.com/hampel/close-api/blob/master/DESIGN.md)
+  list the questions that remain open, the error body's shape chief among them

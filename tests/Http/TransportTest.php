@@ -41,8 +41,7 @@ final class TransportTest extends TestCase
 
     /**
      * Every path in the Close API ends in a slash and a request without one
-     * does not reach the endpoint it looks like it should. The previous package
-     * shipped a getCustomField() missing exactly this.
+     * does not reach the endpoint it looks like it should.
      */
     #[Test]
     public function it_adds_the_trailing_slash_a_call_site_forgot(): void

@@ -8,8 +8,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 published on Packagist. Library only: no framework, no service provider, no console entry point.
 PSR-4 `Hampel\CloseApi\` → `src/`, `Hampel\CloseApi\Tests\` → `tests/`.
 
-It replaces `hampel/close`, which is abandoned. No shared code, no upgrade path.
-
 ## Commands
 
 ```bash
@@ -24,10 +22,10 @@ vendor/bin/phpunit --filter it_adds_the_trailing_slash # one test
 
 ## Nothing here has been run against the live API
 
-There is no Close API key on this machine and no test organization to point one at. The suite, the
-static analysis and the endpoint inventory all pass without a single real call having been made, so
-treat "the tests are green" as "the requests are built as intended", not as "Close agrees". The
-closing section of DESIGN.md lists the specific questions still open.
+The suite, the static analysis and the endpoint inventory all pass without a single real call
+having been made, so treat "the tests are green" as "the requests are built as intended", not as
+"Close agrees". The closing section of `DESIGN.md` lists the specific questions still open, and
+settling them needs an API key and an organization it is safe to write to.
 
 ## Read DESIGN.md first
 
@@ -72,9 +70,9 @@ one is a design decision, not a refactor — see DESIGN.md for why.
 PHPUnit 12 with `failOnRisky`, `failOnWarning`, `failOnDeprecation` and `failOnNotice` on.
 
 Tests assert against the **real PSR-7 request** the transport produced, using
-`php-http/mock-client`. Do not introduce a mock of this package's own interfaces: that was the flaw
-in the package this replaces, where the mock encoded the same assumptions as the code, so the two
-agreed with each other regardless of what Close does.
+`php-http/mock-client`. Do not introduce a mock of this package's own interfaces: such a mock
+encodes the same assumptions as the code, so the two agree with each other regardless of what Close
+actually does, and the suite goes green on a request no server would accept.
 
 `tests/TestCase.php` wires the mock client and gives you `queue()`, `request()` and `requests()`.
 `Tests\Double\RecordingSleeper` makes retry tests instant; `Tests\Double\NeverRetry` is the default
@@ -96,5 +94,5 @@ honest.
 
 ## Release
 
-Update `CHANGELOG.md` (newest first, `X.Y.Z (YYYY-MM-DD)`, breaking changes called out explicitly)
-and commit. Simon does the pushing and tagging.
+Update `CHANGELOG.md` (newest first, `X.Y.Z (YYYY-MM-DD)`, breaking changes called out
+explicitly) and commit. Tagging and publishing are the maintainer's.

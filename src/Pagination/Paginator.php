@@ -23,9 +23,9 @@ use Traversable;
  *
  * So this deliberately does not offer "iterate everything and trust has_more".
  * A loop written that way works until the collection grows past whichever
- * unknown bound applies and then starts failing, or, in the shape this
- * package's predecessor shipped, quietly returns the first hundred records as
- * though they were the whole set.
+ * unknown bound applies, and then starts failing. The quieter version of the
+ * same mistake — one unlimited call against a default page size of 100 —
+ * returns the first hundred records as though they were the whole set.
  *
  * Two things follow. A 400 on any page after the first becomes a
  * DeepPaginationException naming how far the walk had got, rather than an

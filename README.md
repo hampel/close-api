@@ -5,10 +5,6 @@ A PHP client for the [Close CRM REST API](https://developer.close.com/).
 
 By [Simon Hampel](mailto:simon@hampelgroup.com)
 
-Replaces `hampel/close`, which is abandoned. This is a new package rather than a
-new major version of that one: it shares no code, no namespace and no API with
-it, so a version number implying a lineage would be a fiction.
-
 Requires PHP 8.3 or later.
 
 Installation
@@ -81,7 +77,8 @@ $close->transport()->get('playbook/');
 $close->transport()->post('webhook/', ['url' => '...']);
 ```
 
-`spec/ENDPOINTS.md` is the generated inventory of the whole API.
+The [endpoint inventory](https://github.com/hampel/close-api/blob/master/spec/ENDPOINTS.md)
+lists the whole API.
 
 ### Pagination
 
@@ -200,7 +197,8 @@ live API**. The suite being green means the requests are built the way this
 package intends. It does not mean Close agrees.
 
 The places where this package currently infers rather than knows — the error
-body's shape most of all — are listed at the end of `DESIGN.md`.
+body's shape most of all — are listed at the end of the
+[design notes](https://github.com/hampel/close-api/blob/master/DESIGN.md).
 
 License
 -------

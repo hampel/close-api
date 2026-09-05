@@ -263,8 +263,8 @@ final class Transport
 
         // Every path in the Close API ends in a slash, and a request without
         // one does not reach the endpoint it looks like it should. Adding it
-        // here rather than trusting each call site removes a bug class the
-        // previous package shipped.
+        // here rather than trusting each call site removes the whole class of
+        // bug at one point instead of guarding against it at every one.
         if ($path !== '' && ! str_ends_with($path, '/')) {
             $path .= '/';
         }

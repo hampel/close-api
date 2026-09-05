@@ -75,8 +75,7 @@ final class ResourceTest extends TestCase
             'sms list' => ['GET', 'activity/sms/', fn (Close $c) => $c->messages()->list()],
             'meetings list' => ['GET', 'activity/meeting/', fn (Close $c) => $c->meetings()->list()],
 
-            // Singular, per the OpenAPI spec. The old package used the plural
-            // and it is not an endpoint.
+            // Singular, per the OpenAPI spec. The plural is not an endpoint.
             'custom fields lead' => ['GET', 'custom_field/lead/', fn (Close $c) => $c->customFields(CustomFieldType::Lead)->list()],
             'custom fields contact' => ['GET', 'custom_field/contact/', fn (Close $c) => $c->customFields(CustomFieldType::Contact)->list()],
             'custom fields shared' => ['GET', 'custom_field/shared/', fn (Close $c) => $c->customFields(CustomFieldType::Shared)->list()],
@@ -287,8 +286,8 @@ final class ResourceTest extends TestCase
     }
 
     /**
-     * The old package's whitelist was missing "error" and "scheduled"; the
-     * spec's CreateEmailActivity schema lists all six.
+     * All six, per the spec's CreateEmailActivity schema - "scheduled" and
+     * "error" are easy to miss.
      */
     #[Test]
     public function every_status_the_spec_defines_is_accepted(): void

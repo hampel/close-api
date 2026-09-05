@@ -6,23 +6,10 @@ the Close API that the design is a response to. Read this before proposing a
 structural change — several of the shapes below look arbitrary until you know
 which API behaviour forced them.
 
-Written 5 September 2026, against the OpenAPI spec fetched that day and the
-documentation at `https://developer.close.com/`.
-
-
-Lineage
--------
-
-This replaces `hampel/close` (3.2.0, 19 downloads total, 0 per month). That
-package was a Guzzle-native wrapper over roughly 20 endpoints, with a
-decorator-by-inheritance logger and request types but no response types. It
-worked, but it was written against an older API and never verified against a
-live one.
-
-It is not a version 4. Composer has no relationship between the two names, so a
-`hampel/close-api` numbered 4.0.0 would be a package whose first release claims
-a lineage it does not have. `hampel/close` is abandoned in favour of this one,
-which starts at 0.x and reaches 1.0.0 when a consumer is actually running on it.
+The API facts below were checked on 5 September 2026, against the OpenAPI spec
+fetched that day and the documentation at `https://developer.close.com/`. They
+describe a remote system that changes without notice, so the date is part of
+the claim.
 
 
 What the OpenAPI spec is, and is not
@@ -55,10 +42,10 @@ values. It is **not** used to generate code: a generated client would be
 half-typed, would invent the missing half from examples, and would silently omit
 the endpoint most consumers reach for first.
 
-The one thing it settled for free: the custom field path is
-`/custom_field/{type}/`, singular. `hampel/close` used `custom_fields/` and was
-wrong. The types are `activity`, `contact`, `custom_object_type`, `lead`,
-`opportunity` and `shared`.
+One thing it settles cheaply: the custom field path is `/custom_field/{type}/`,
+**singular**. The plural is not an endpoint, and it is an easy assumption to
+make from the resource name. The types are `activity`, `contact`,
+`custom_object_type`, `lead`, `opportunity` and `shared`.
 
 
 API behaviour the design is a response to
@@ -105,9 +92,9 @@ is not published, and exceeding either returns a 400.
 
 This is why `Paginator` does not offer "iterate everything". A loop that pages
 on `has_more` alone works until the collection is large enough to cross the
-`_skip` cap and then starts failing — or, in the shape found in the package this
-replaces, is called with no limit at all against a default page size of 100 and
-silently returns the first page as though it were the whole set. The documented
+`_skip` cap and then starts failing. The commoner mistake is worse and quieter:
+one call with no limit at all, against a default page size of 100, returning
+the first page as though it were the whole set. The documented
 way to walk a large collection is to chunk it by `date_created` range, or to use
 the Export API. The paginator therefore has a hard stop and reports why it
 stopped rather than pretending it finished.
@@ -179,17 +166,18 @@ requests and returns queued responses. The assertion is on a real PSR-7 request
 object — method, URI, headers, body — not on a mock of this package's own
 interface.
 
-That distinction is the lesson from the package this replaces. Its suite mocked
-the client interface, so the mock encoded exactly the same assumptions the code
-did; when the two agreed, the test passed, whether or not either matched Close.
-Asserting at the HTTP boundary does not make the suite able to detect that the
-remote API changed — nothing offline can do that — but it does mean a test
-failure means the request was wrong, rather than that a mock expectation was
-restated.
+That distinction is the whole point. A mock of the package's own client
+interface encodes exactly the same assumptions as the code that calls it, so
+the two agree with each other whether or not either agrees with Close — and a
+green suite then says nothing about the endpoints behind it. Asserting at the
+HTTP boundary does not make the suite able to detect that the remote API
+changed; nothing offline can do that. What it buys is that a failure means the
+request was wrong, rather than that a mock expectation was restated.
 
-Detecting drift is a harness's job, not the suite's. There is no `harness/` yet — there is no
-API key on this machine and no test organization to point one at — so every question
-below is still open, and everything in this package is verified offline only.
+Detecting drift is a harness's job, not the suite's, and there is no `harness/`
+yet — writing one needs an API key and an organization it is safe to write to.
+So every question listed at the end of this document is still open, and
+everything here is verified offline only.
 
 
 Scope
@@ -232,10 +220,9 @@ weight.
 Questions only a live call can settle
 ------------------------------------
 
-Nothing in this package has ever spoken to Close. There is no API key on this
-machine and no test organization to point one at, so everything above was
-verified against the spec, the documentation and a mock PSR-18 client, and
-nothing was verified against the API itself.
+Nothing in this package has ever spoken to Close. Everything above was verified
+against the spec, the documentation and a mock PSR-18 client; nothing was
+verified against the API itself.
 
 That distinction matters more here than it would in most packages, because the
 thing being modelled is a remote system that changes without telling anyone. A
@@ -244,8 +231,8 @@ nothing about whether Close still agrees.
 
 These are the specific questions outstanding. Each is a place where the code
 currently guesses, defensibly, and would be tightened by one observation. A
-`harness/` of `hampel/rig` exercises is the way to settle them, and is worth
-writing the day a key exists.
+harness of exercises driving the real API is the way to settle them, and is
+worth writing the day there is a key and an organization safe to write to.
 
 1. **What shape is an error body?** Documented nowhere — not in the prose, not
    in the spec, which gives error responses a description and no schema.

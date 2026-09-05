@@ -62,8 +62,7 @@ final class Tasks extends Resource
      *
      * `_type` is required. The spec models the payload as a oneOf discriminated
      * on it — `lead` for an ordinary task, `outgoing_call` for a call task —
-     * and the two shapes differ. Omitting it is rejected, which is worth
-     * stating because this package's predecessor omitted it deliberately.
+     * and the two shapes differ, so omitting it is rejected.
      *
      * @param  array<string, mixed>  $attributes
      */
