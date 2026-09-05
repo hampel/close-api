@@ -1,0 +1,71 @@
+{
+    "name": "hampel/close-api",
+    "description": "A PHP client for the Close CRM REST API",
+    "homepage": "https://github.com/hampel/close-api",
+    "authors": [
+        {
+            "name": "Simon Hampel",
+            "email": "simon@hampelgroup.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/hampel/close-api/issues",
+        "source": "https://github.com/hampel/close-api"
+    },
+    "keywords": [
+        "close",
+        "close.com",
+        "crm",
+        "api",
+        "psr-18"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3",
+        "ext-json": "*",
+        "php-http/discovery": "^1.19",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^2.0",
+        "psr/log": "^1.0|^2.0|^3.0"
+    },
+    "require-dev": {
+        "hampel/rig": "^1.1",
+        "laravel/pint": "^1.30",
+        "nyholm/psr7": "^1.8",
+        "php-http/mock-client": "^1.6",
+        "phpstan/phpstan": "^2.1.22",
+        "phpunit/phpunit": "^12.0"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle": "A PSR-18 client and PSR-17 factories, discovered automatically by Client::create()"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hampel\\CloseApi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hampel\\CloseApi\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "format": "pint",
+        "lint": "pint --test",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    }
+}
