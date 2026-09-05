@@ -82,9 +82,13 @@ policy so an unrelated test never sends two requests.
 
 ## Version support
 
-`php >=8.3` — Tier A under `/srv/www/version-support.html`. CI runs 8.3, 8.4 and 8.5; PHPStan
-covers the whole range in one pass. Widening or narrowing is a policy decision — read that document
-first.
+`php >=8.3`, with no upper bound. CI runs 8.3, 8.4 and 8.5; PHPStan covers the whole range in one
+pass, so the declared constraint and the tested one stay the same thing.
+
+The floor tracks upstream security support: a version is supported while PHP still supports it, and
+dropped when they drop it. Raising it is a major version bump and belongs in the CHANGELOG as one
+line. Nobody loses anything when it moves — Composer resolves an older consumer to the last release
+that claimed them, permanently.
 
 `psr/log` is claimed at `^1.0|^2.0|^3.0` deliberately: XenForo 2.3 ships psr/log 1.1.4 and its
 autoloader wins over an add-on's private vendor tree. The lowest-dependency CI job keeps that claim

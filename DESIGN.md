@@ -209,9 +209,12 @@ is always a mechanical question rather than a guess.
 Version support
 ---------------
 
-PHP 8.3 and up — the floor for new work under `/srv/www/version-support.html`,
-which is a Tier A policy question and not a preference. CI runs 8.3, 8.4 and
-8.5; PHPStan analyses the whole range in one pass.
+PHP 8.3 and up, with no upper bound. CI runs 8.3, 8.4 and 8.5; PHPStan analyses
+the whole range in one pass, so nothing is claimed that is not tested.
+
+The floor follows upstream: supported while PHP supports it, dropped when they
+drop it, rather than moved when a new feature looks appealing. Raising it is a
+major version bump.
 
 `psr/log` is claimed at `^1.0|^2.0|^3.0` for one specific reason: XenForo 2.3
 ships `psr/log` 1.1.4, and XenForo's autoloader is registered before an add-on's
