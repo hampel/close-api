@@ -187,7 +187,9 @@ remote API changed — nothing offline can do that — but it does mean a test
 failure means the request was wrong, rather than that a mock expectation was
 restated.
 
-Detecting drift is the harness's job, not the suite's. See `harness/`.
+Detecting drift is a harness's job, not the suite's. There is no `harness/` yet — there is no
+API key on this machine and no test organization to point one at — so every question
+below is still open, and everything in this package is verified offline only.
 
 
 Scope
@@ -222,3 +224,47 @@ The same install is why the PSR-18 choice costs nothing there: XenForo 2.3 also
 ships `psr/http-client` 1.0.3, `psr/http-factory` 1.1.0, `psr/http-message` 2.0
 and Guzzle 7.8.2, so discovery finds a working client with no added vendor
 weight.
+
+
+Questions only a live call can settle
+------------------------------------
+
+Nothing in this package has ever spoken to Close. There is no API key on this
+machine and no test organization to point one at, so everything above was
+verified against the spec, the documentation and a mock PSR-18 client, and
+nothing was verified against the API itself.
+
+That distinction matters more here than it would in most packages, because the
+thing being modelled is a remote system that changes without telling anyone. A
+green suite means the requests are built the way this package intends. It says
+nothing about whether Close still agrees.
+
+These are the specific questions outstanding. Each is a place where the code
+currently guesses, defensibly, and would be tightened by one observation. A
+`harness/` of `hampel/rig` exercises is the way to settle them, and is worth
+writing the day a key exists.
+
+1. **What shape is an error body?** Documented nowhere — not in the prose, not
+   in the spec, which gives error responses a description and no schema.
+   `Transport::message()` searches `error`, `message`, `detail` and `errors` and
+   falls back to the status line; `ResponseException::fieldErrors()` looks for
+   `field-errors`. All of that is inference from what has been seen elsewhere.
+2. **Where are the `_limit` and `_skip` caps?** Per resource, unpublished. Until
+   one is observed, `DeepPaginationException` can only say a later page was
+   rejected and that the cap is the likely reason.
+3. **What does a 429 actually look like?** The `RateLimit` header is documented
+   precisely enough to parse with confidence, but no 429 has been seen, so the
+   retry path has never run against a real one.
+4. **Does `Retry-After` really round `reset` up?** The documentation says so.
+   `RateLimitException::waitSeconds()` prefers `reset` on that basis.
+5. **Do the endpoint groups behave as described?** Whether two paths share a
+   limit is not something a client can discover except by observation.
+6. **Does the `_params` override work as documented on the endpoints this
+   package uses it for?** The mechanism is documented generally; it has not been
+   exercised against any specific endpoint.
+7. **Is `POST /data/search/` still shaped the way the prose says?** It is absent
+   from the spec, so the prose is the only description of it, and prose drifts
+   more quietly than a schema.
+
+Two of these — 1 and 2 — are the ones where a wrong guess produces a confusing
+error rather than a wrong result. The rest would produce a wrong result.

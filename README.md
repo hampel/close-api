@@ -26,17 +26,11 @@ Usage
 -----
 
 ```php
-use Hampel\CloseApi\Auth\ApiKey;
-use Hampel\CloseApi\Http\Transport;
+use Hampel\CloseApi\Close;
 
-$transport = new Transport(
-    auth: new ApiKey($apiKey),
-    httpClient: $httpClient,        // any PSR-18 client
-    requestFactory: $factory,       // any PSR-17 factory
-    streamFactory: $factory,
-);
+$close = Close::withApiKey($apiKey);
 
-$lead = $transport->get('lead/lead_abc123/');
+$lead = $close->leads()->get('lead_abc123');
 
 echo $lead['name'];
 echo $lead['custom.cf_xyz'];        // custom fields are literal keys
@@ -44,18 +38,86 @@ echo $lead['custom.cf_xyz'];        // custom fields are literal keys
 
 Every call returns a `Response`: array access, iteration and `count()` over the
 decoded body, plus the status and whatever rate limit state came back with it.
+There are no per-endpoint response classes — Close's own spec leaves more than
+half its responses untyped, and a class built from a single example is a guess
+wearing a contract's clothing.
 
 ```php
-$leads = $transport->get('lead/', ['_limit' => 50, '_fields' => ['id', 'name']]);
+$leads = $close->leads()->list(['_limit' => 50, '_fields' => ['id', 'name']]);
 
 foreach ($leads->data() as $lead) {
     // ...
 }
 
-if ($leads->hasMore()) {
-    // ...
+$close->leads()->create(['name' => 'Wayne Enterprises', 'status_id' => 'stat_x']);
+$close->leads()->update('lead_abc123', ['description' => 'Updated']);
+$close->contacts()->list(['lead_id' => 'lead_abc123']);
+$close->notes()->create(['lead_id' => 'lead_abc123', 'note' => 'Called back']);
+$close->tasks()->create(['_type' => 'lead', 'lead_id' => 'lead_abc123', 'text' => 'Follow up']);
+```
+
+To wire the transport yourself rather than letting discovery find a client:
+
+```php
+use Hampel\CloseApi\Auth\ApiKey;
+use Hampel\CloseApi\Http\Transport;
+
+$close = new Close(new Transport(
+    auth: new ApiKey($apiKey),
+    httpClient: $httpClient,        // any PSR-18 client
+    requestFactory: $factory,       // any PSR-17 factory
+    streamFactory: $factory,
+));
+```
+
+### Endpoints that are not wrapped
+
+Close publishes 302 operations and most of them are its own UI's features. The
+resources here cover what applications actually use; everything else is one call
+away, and that is a supported route rather than a workaround:
+
+```php
+$close->transport()->get('playbook/');
+$close->transport()->post('webhook/', ['url' => '...']);
+```
+
+`spec/ENDPOINTS.md` is the generated inventory of the whole API.
+
+### Pagination
+
+Close paginates two different ways and caps both, so neither paginator offers a
+plain "fetch everything".
+
+```php
+foreach ($close->leads()->paginate(['status_id' => 'stat_x']) as $lead) {
+    // pages fetched as needed
 }
 ```
+
+Offset pagination has a maximum `_limit` **and** a maximum `_skip`, per resource,
+neither of which Close publishes. Cross one and a later page returns a bare 400;
+this package turns that into a `DeepPaginationException` saying how far the walk
+got and what to do instead — chunk the query by `date_created`, or use the Export
+API.
+
+Searching uses cursors:
+
+```php
+$results = $close->search()->paginate([
+    'type' => 'and',
+    'queries' => [
+        ['type' => 'object_type', 'object_type' => 'contact'],
+        // ...
+    ],
+]);
+```
+
+Two constraints there are documented and both are traps. A query returns at most
+**10,000 objects** — reaching that raises `PaginationLimitException` rather than
+handing back a truncated answer that looks complete. And **cursors expire after
+30 seconds**, which means the budget is spent between page fetches: a loop doing
+real work per record succeeds on a small result set and fails on a large one.
+Buffer each page before processing it.
 
 Errors
 ------
@@ -70,7 +132,7 @@ use Hampel\CloseApi\Exception\RateLimitException;
 use Hampel\CloseApi\Exception\CloseApiException;
 
 try {
-    $lead = $transport->get("lead/{$id}/");
+    $lead = $close->leads()->get($id);
 } catch (NotFoundException) {
     return null;                          // an ordinary answer, not a failure
 } catch (RateLimitException $e) {
@@ -93,7 +155,11 @@ them. It reads the `RateLimit` header off each response and exposes it, and when
 a 429 arrives it waits exactly as long as Close asked and tries again.
 
 ```php
-$transport->lastRateLimit()?->remaining;
+$close->transport()->lastRateLimit()?->remaining;
+
+// or, per response
+$leads = $close->leads()->list();
+$leads->rateLimit?->remaining;
 ```
 
 Retries are the default and are deliberately narrow: a 429 is always retried,
@@ -105,10 +171,11 @@ how duplicate records get created.
 Pass your own policy to change any of that:
 
 ```php
-new Transport(
-    // ...
-    retryPolicy: new DefaultRetryPolicy(maxAttempts: 5, baseDelay: 1.0, maxDelay: 30.0),
-);
+Close::withApiKey($apiKey, retryPolicy: new DefaultRetryPolicy(
+    maxAttempts: 5,
+    baseDelay: 1.0,
+    maxDelay: 30.0,
+));
 ```
 
 `maxDelay` is a ceiling on any single wait rather than a target. If Close asks
@@ -123,6 +190,17 @@ logged — an API key is described by its prefix and length only.
 
 Note that `debug` will include request URIs and payload sizes, and a URI can
 carry a search term. Choose the level accordingly.
+
+Status
+------
+
+Pre-1.0, and honestly so: the whole package is verified against Close's OpenAPI
+spec, its documentation and a mock PSR-18 client, and **not once against the
+live API**. The suite being green means the requests are built the way this
+package intends. It does not mean Close agrees.
+
+The places where this package currently infers rather than knows — the error
+body's shape most of all — are listed at the end of `DESIGN.md`.
 
 License
 -------

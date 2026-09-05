@@ -28,3 +28,27 @@ rewrite of the calling code.
   `Exception\CloseApiException`
 * Automatic use of Close's `_params` body with an `x-http-method-override: GET`
   header once a GET's query string would exceed the practical URL limit
+* `Close` — the entry point, with `Close::withApiKey()` discovering an installed
+  PSR-18 client, and `transport()` as a supported route to any endpoint the
+  resources do not wrap
+* Resources for leads, contacts, opportunities, tasks, users, the activity feed,
+  notes, emails, calls, SMS, meetings, custom fields, lead and opportunity
+  statuses, and the Advanced Filtering API. Each exposes only the operations
+  Close actually offers, so `Meetings` has no `create()` and `Users` has no
+  `create()`, `update()` or `delete()`
+* `Pagination\Paginator` for the offset endpoints, raising
+  `DeepPaginationException` — with how far the walk got and what to do instead —
+  when a later page is rejected by the unpublished per-resource `_skip` cap
+* `Pagination\CursorPaginator` for the Advanced Filtering API, enforcing Close's
+  documented 10,000-object cap with `PaginationLimitException` rather than
+  returning a truncated result that looks complete, and reporting
+  `CursorExpiredException` when more than the documented 30 seconds passed
+  between pages
+* `spec/ENDPOINTS.md`, a generated inventory of all 302 operations Close
+  publishes, and `spec/build-inventory.php` to regenerate it
+
+**Known limits**
+
+* Nothing in this release has been run against the live Close API. See the
+  closing section of `DESIGN.md` for the specific questions that remain open,
+  the error body's shape chief among them

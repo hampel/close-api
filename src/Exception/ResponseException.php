@@ -18,8 +18,8 @@ use Hampel\CloseApi\Http\RateLimit;
  * responses a description and no schema. So the decoded body is exposed as-is
  * through `body()` and the message is assembled defensively from whichever of
  * the plausible keys is present, falling back to the status line. Nothing here
- * asserts a structure, because nothing has verified one. Settling it is a
- * question for the harness — see `harness/`.
+ * asserts a structure, because nothing has verified one — settling that needs a
+ * live call, and DESIGN.md lists it with the other open questions.
  */
 class ResponseException extends RuntimeException
 {

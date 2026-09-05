@@ -22,6 +22,13 @@ vendor/bin/phpunit tests/Http/TransportTest.php        # one file
 vendor/bin/phpunit --filter it_adds_the_trailing_slash # one test
 ```
 
+## Nothing here has been run against the live API
+
+There is no Close API key on this machine and no test organization to point one at. The suite, the
+static analysis and the endpoint inventory all pass without a single real call having been made, so
+treat "the tests are green" as "the requests are built as intended", not as "Close agrees". The
+closing section of DESIGN.md lists the specific questions still open.
+
 ## Read DESIGN.md first
 
 `DESIGN.md` records the API facts this design is a response to — the rate limit model, the two
@@ -57,7 +64,8 @@ one is a design decision, not a refactor — see DESIGN.md for why.
   request.
 - **The error body shape is unverified.** Close documents neither its keys nor its structure.
   `Transport::message()` searches plausible keys and falls back to the status line; nothing asserts
-  a shape. If the harness settles it, that is the moment to tighten this.
+  a shape. DESIGN.md's closing section lists this and the other questions a live call would settle —
+  nothing here has ever spoken to Close.
 
 ## Testing
 
