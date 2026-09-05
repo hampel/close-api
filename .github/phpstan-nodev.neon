@@ -1,0 +1,16 @@
+# Used only by the "Declared dependencies" job, against a --no-dev install.
+#
+# Separate from phpstan.neon for two reasons: that one analyses tests/, which
+# cannot resolve PHPUnit once the dev dependencies are gone, and it sets a
+# phpVersion range that only phpstan/phpstan ^2.1.22 accepts - the standalone
+# binary this job uses is a different build with its own idea of that range.
+#
+# Level 0 is enough. The question here is "does this symbol exist at all",
+# not "is it used correctly", and raising the level only adds noise from types
+# that legitimately live in dev. The known cost is that a class named ONLY in a
+# docblock is invisible at this level - and to composer-require-checker as well.
+parameters:
+    level: 0
+
+    paths:
+        - %currentWorkingDirectory%/src

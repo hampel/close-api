@@ -94,12 +94,26 @@ jobs:
     name: Declared dependencies
     runs-on: ubuntu-latest
 
-    # Reads src/ against a --no-dev install and reports any symbol that no
-    # declared dependency provides. This package has real dependencies and a
-    # deliberately minimal set of them - PSR interfaces and discovery, no
-    # concrete HTTP client - so this job is what stops a convenience reference
-    # to Guzzle, Nyholm or a test-only helper leaking into src/ and turning an
-    # optional suggestion into an undeclared requirement.
+    # Two checks against one --no-dev install, because a class used but never
+    # declared works on this machine and fatals for the consumer: something
+    # else is supplying it here. Nothing else in this workflow catches that -
+    # the other jobs all install the full dev tree, so everything resolves.
+    #
+    # They overlap without replacing each other. composer-require-checker
+    # collects symbol names and takes its known set from "require", so it sees
+    # both a dev dependency leaking into src/ and a TRANSITIVE one - a package
+    # that survives --no-dev today and disappears at its supplier's next major.
+    # It is also the only check that names an undeclared ext-*, since PHPStan
+    # knows those functions from its own stubs and the suite passes because the
+    # runner has them.
+    #
+    # PHPStan reads the code instead, so it says WHERE in src/ the symbol is
+    # reached and covers functions and constants alongside classes. It is blind
+    # to the transitive case by construction. It also skips the body of any
+    # trait no analysed class uses, which would make this step pass
+    # unconditionally on a package whose src/ is traits - src/ here is 50 files
+    # and none of them are traits, and the step was confirmed able to fail by
+    # planting a require-dev-only class in src/ and watching it get reported.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -108,15 +122,27 @@ jobs:
           php-version: '8.3'
           extensions: json
           coverage: none
+          # Both are dev dependencies that the install below deletes, and both
+          # have to run from outside the package. For PHPStan that is
+          # load-bearing rather than tidy: run from inside any vendor tree and
+          # it lends the analysed code that tree's dependencies, then passes on
+          # exactly the class it was meant to catch. setup-php puts these
+          # outside every vendor tree by construction.
+          tools: phpstan, composer-require-checker
 
       - run: composer install --no-dev --prefer-dist --no-progress
 
-      # Installed outside the package so that the checker's own dependencies
-      # cannot land in the tree being checked. "composer -d" does not create the
-      # directory: without the mkdir the step dies with "Invalid working
-      # directory specified".
-      - run: |
-          mkdir -p /tmp/crc
-          composer -d /tmp/crc require maglnet/composer-require-checker:^4.20 --no-progress
+      # Proof the strip actually happened. PHPStan discovers symbols from
+      # vendor/composer/installed.json rather than from the autoloader alone,
+      # so "composer dump-autoload --no-dev" is not a shortcut - the packages
+      # have to be gone, not just unregistered.
+      - run: ls vendor/
 
-      - run: /tmp/crc/vendor/bin/composer-require-checker check composer.json
+      # A separate config from phpstan.neon, which analyses tests/ - that
+      # cannot resolve PHPUnit once --no-dev has run, and the failure reads as
+      # a dependency finding rather than the configuration error it is.
+      - run: >
+          phpstan analyse -c .github/phpstan-nodev.neon
+          --autoload-file=vendor/autoload.php --no-progress
+
+      - run: composer-require-checker check composer.json
