@@ -78,14 +78,19 @@ final class Response implements ArrayAccess, Countable, IteratorAggregate, JsonS
     }
 
     /**
-     * Whether this is a list response — a `data` array with the `has_more`
-     * flag that offset pagination returns alongside it.
+     * Whether this is a list response.
+     *
+     * A `data` array alone is not enough: an object could legitimately have a
+     * field called `data`. What makes it an envelope is the pagination marker
+     * beside it — `has_more` for the offset endpoints, `cursor` for the two
+     * that paginate by cursor. Both shapes count, because both are list
+     * responses.
      */
     public function isList(): bool
     {
         return isset($this->body['data'])
             && is_array($this->body['data'])
-            && array_key_exists('has_more', $this->body);
+            && (array_key_exists('has_more', $this->body) || array_key_exists('cursor', $this->body));
     }
 
     /**

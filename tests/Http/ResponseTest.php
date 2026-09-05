@@ -58,8 +58,34 @@ final class ResponseTest extends TestCase
     }
 
     /**
+     * The Advanced Filtering API returns {data, cursor} with no has_more, so a
+     * check for has_more alone treats a whole search result as a single object
+     * and hands back the envelope instead of the records.
+     */
+    #[Test]
+    public function it_recognises_the_cursor_envelope_as_a_list_too(): void
+    {
+        $response = new Response(['data' => [['id' => 'cont_a']], 'cursor' => 'abc'], 200);
+
+        $this->assertTrue($response->isList());
+        $this->assertSame([['id' => 'cont_a']], $response->data());
+        $this->assertFalse($response->hasMore(), 'Cursor responses carry no has_more.');
+        $this->assertSame('abc', $response->cursor());
+    }
+
+    #[Test]
+    public function the_last_cursor_page_is_still_a_list(): void
+    {
+        $response = new Response(['data' => [], 'cursor' => null], 200);
+
+        $this->assertTrue($response->isList());
+        $this->assertSame([], $response->data());
+    }
+
+    /**
      * `data` alone is not a list envelope - a single object could legitimately
-     * have a field called data. The has_more flag is what makes it one.
+     * have a field called data. The pagination marker beside it is what makes
+     * it one.
      */
     #[Test]
     public function it_does_not_mistake_a_data_field_for_a_list_envelope(): void
