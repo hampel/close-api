@@ -1,6 +1,12 @@
 hampel/close-api
 ================
 
+[![Tests](https://github.com/hampel/close-api/actions/workflows/tests.yml/badge.svg)](https://github.com/hampel/close-api/actions/workflows/tests.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/hampel/close-api.svg?style=flat-square)](https://packagist.org/packages/hampel/close-api)
+[![Total Downloads](https://img.shields.io/packagist/dt/hampel/close-api.svg?style=flat-square)](https://packagist.org/packages/hampel/close-api)
+[![Open Issues](https://img.shields.io/github/issues-raw/hampel/close-api.svg?style=flat-square)](https://github.com/hampel/close-api/issues)
+[![License](https://img.shields.io/packagist/l/hampel/close-api.svg?style=flat-square)](https://packagist.org/packages/hampel/close-api)
+
 A PHP client for the [Close CRM REST API](https://developer.close.com/).
 
 By [Simon Hampel](mailto:simon@hampelgroup.com)
