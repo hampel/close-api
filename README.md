@@ -28,12 +28,29 @@ no preference, install Guzzle:
 use GuzzleHttp\Client as Guzzle;
 use Hampel\CloseApi\Close;
 
-$close = Close::withApiKey($apiKey, new Guzzle());
+$close = Close::withKey($apiKey, new Guzzle());
 
 $lead = $close->leads()->get('lead_abc123');
 
 echo $lead['name'];
 echo $lead['custom.cf_xyz'];        // custom fields are literal keys
+```
+
+The HTTP client is always yours to pass. The PSR-17 factories are not: when
+none are given, Guzzle's, Nyholm's or Diactoros' are found by class name,
+whichever is installed. To choose them yourself, or to build the transport
+directly:
+
+```php
+use Hampel\CloseApi\Auth\ApiKey;
+use Hampel\CloseApi\Http\Transport;
+
+$close = new Close(new Transport(
+    auth: new ApiKey($apiKey),
+    httpClient: $httpClient,        // any PSR-18 client
+    requestFactory: $factory,       // optional: any PSR-17 factory
+    streamFactory: $factory,        // optional
+));
 ```
 
 Every call returns a `Response`: array access, iteration and `count()` over the
@@ -54,23 +71,6 @@ $close->leads()->update('lead_abc123', ['description' => 'Updated']);
 $close->contacts()->list(['lead_id' => 'lead_abc123']);
 $close->notes()->create(['lead_id' => 'lead_abc123', 'note' => 'Called back']);
 $close->tasks()->create(['_type' => 'lead', 'lead_id' => 'lead_abc123', 'text' => 'Follow up']);
-```
-
-The HTTP client is always yours to pass. The PSR-17 factories are not: when
-none are given, Guzzle's, Nyholm's or Diactoros' are found by class name,
-whichever is installed. To choose them yourself, or to build the transport
-directly:
-
-```php
-use Hampel\CloseApi\Auth\ApiKey;
-use Hampel\CloseApi\Http\Transport;
-
-$close = new Close(new Transport(
-    auth: new ApiKey($apiKey),
-    httpClient: $httpClient,        // any PSR-18 client
-    requestFactory: $factory,       // optional: any PSR-17 factory
-    streamFactory: $factory,        // optional
-));
 ```
 
 ### Endpoints that are not wrapped
@@ -173,7 +173,7 @@ how duplicate records get created.
 Pass your own policy to change any of that:
 
 ```php
-Close::withApiKey($apiKey, $httpClient, retryPolicy: new DefaultRetryPolicy(
+Close::withKey($apiKey, $httpClient, retryPolicy: new DefaultRetryPolicy(
     maxAttempts: 5,
     baseDelay: 1.0,
     maxDelay: 30.0,

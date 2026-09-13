@@ -38,7 +38,7 @@ final class Psr17DiscoveryTest extends TestCase
     {
         $this->queue(200, ['id' => 'user_me']);
 
-        $this->assertSame('user_me', Close::withApiKey('api_test', $this->http)->users()->me()['id']);
+        $this->assertSame('user_me', Close::withKey('api_test', $this->http)->users()->me()['id']);
     }
 
     /**

@@ -35,7 +35,7 @@ use SensitiveParameter;
 /**
  * The entry point.
  *
- *     $close = Close::withApiKey($key, $httpClient);
+ *     $close = Close::withKey($key, $httpClient);
  *     $lead  = $close->leads()->get('lead_abc123');
  *
  * The resources here cover what applications actually use. Close publishes 302
@@ -65,8 +65,8 @@ final class Close
      * ceremony, and ceremony in an example is what gets copied. The PSR-17
      * factories are found when omitted; the HTTP client never is.
      */
-    public static function withApiKey(
-        #[SensitiveParameter] string $apiKey,
+    public static function withKey(
+        #[SensitiveParameter] string $key,
         ClientInterface $httpClient,
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
@@ -74,7 +74,7 @@ final class Close
         ?RetryPolicy $retryPolicy = null,
     ): self {
         return self::with(
-            new ApiKey($apiKey),
+            new ApiKey($key),
             $httpClient,
             $requestFactory,
             $streamFactory,
@@ -84,7 +84,7 @@ final class Close
     }
 
     /**
-     * As `withApiKey()`, for an OAuth access token or any other scheme.
+     * As `withKey()`, for an OAuth access token or any other scheme.
      */
     public static function with(
         Authentication $auth,

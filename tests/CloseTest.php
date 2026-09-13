@@ -100,7 +100,7 @@ final class CloseTest extends TestCase
     #[Test]
     public function it_builds_a_client_from_an_api_key_and_a_given_http_client(): void
     {
-        $close = Close::withApiKey('api_test', $this->http);
+        $close = Close::withKey('api_test', $this->http);
 
         $this->queue(200, ['id' => 'user_me']);
 
@@ -127,6 +127,6 @@ final class CloseTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        Close::withApiKey('', $this->http);
+        Close::withKey('', $this->http);
     }
 }

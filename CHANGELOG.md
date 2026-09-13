@@ -23,7 +23,7 @@ CHANGELOG
   `Exception\CloseApiException`
 * Automatic use of Close's `_params` body with an `x-http-method-override: GET`
   header once a GET's query string would exceed the practical URL limit
-* `Close` — the entry point, with `Close::withApiKey()` taking an API key and a
+* `Close` — the entry point, with `Close::withKey()` taking an API key and a
   PSR-18 client, and `transport()` as a supported route to any endpoint the
   resources do not wrap
 * PSR-17 factories are optional: when none are passed, Guzzle's, Nyholm's or
