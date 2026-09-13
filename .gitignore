@@ -2,6 +2,12 @@
 composer.phar
 composer.lock
 .DS_Store
+.idea/
+.phpunit.cache/
+.phpunit.result.cache
+
+# session notes and audit state - local to this clone, never published
+CLAUDE.local.md
 
 # Secrets. Deliberately not anchored with a leading slash, so these match at any depth:
 # an environment file can legitimately sit in a subdirectory rather than at the root.
@@ -10,7 +16,8 @@ composer.lock
 .env.*
 !.env.example
 
-.idea/
-.phpunit.cache/
-.phpunit.result.cache
-CLAUDE.local.md
+# NTFS alternate data stream left behind when a file is copied from Windows into
+# WSL - it records the zone the download came from and is of no use here. Also
+# covered by ~/.config/git/ignore on this machine, which a clone elsewhere would
+# not have.
+*:Zone.Identifier

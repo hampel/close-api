@@ -1,5 +1,4 @@
-hampel/close-api
-================
+# Close API for PHP
 
 [![Tests](https://github.com/hampel/close-api/actions/workflows/tests.yml/badge.svg)](https://github.com/hampel/close-api/actions/workflows/tests.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/hampel/close-api.svg?style=flat-square)](https://packagist.org/packages/hampel/close-api)
@@ -13,8 +12,7 @@ By [Simon Hampel](mailto:simon@hampelgroup.com)
 
 Requires PHP 8.3 or later.
 
-Installation
-------------
+## Installation
 
     composer require hampel/close-api
 
@@ -24,8 +22,7 @@ no preference, install Guzzle:
 
     composer require guzzlehttp/guzzle
 
-Usage
------
+## Usage
 
 ```php
 use GuzzleHttp\Client as Guzzle;
@@ -126,8 +123,7 @@ handing back a truncated answer that looks complete. And **cursors expire after
 real work per record succeeds on a small result set and fails on a large one.
 Buffer each page before processing it.
 
-Errors
-------
+## Errors
 
 Every exception implements `Hampel\CloseApi\Exception\CloseApiException`, so one
 `catch` covers the package. Below that, each status Close documents has its own
@@ -153,8 +149,7 @@ try {
 request that caused it. `TransportException` means the request never reached
 Close at all — there is no status and no body to inspect.
 
-Rate limits and retries
------------------------
+## Rate limits and retries
 
 Close enforces rate limits per endpoint group, per API key and per organization,
 and publishes none of those groupings. This package does not pretend to model
@@ -188,8 +183,7 @@ Close::withApiKey($apiKey, $httpClient, retryPolicy: new DefaultRetryPolicy(
 `maxDelay` is a ceiling on any single wait rather than a target. If Close asks
 for longer than it, the request fails with the reason instead of blocking.
 
-Logging
--------
+## Logging
 
 Pass any PSR-3 logger. Requests and responses are logged at `debug`, retries at
 `warning`, and unreachable-host failures at `error`. Credentials are never
@@ -198,8 +192,7 @@ logged — an API key is described by its prefix and length only.
 Note that `debug` will include request URIs and payload sizes, and a URI can
 carry a search term. Choose the level accordingly.
 
-Status
-------
+## Status
 
 Pre-1.0, and honestly so: the whole package is verified against Close's OpenAPI
 spec, its documentation and a mock PSR-18 client, and **not once against the
@@ -210,7 +203,6 @@ The places where this package currently infers rather than knows — the error
 body's shape most of all — are listed at the end of the
 [design notes](https://github.com/hampel/close-api/blob/master/DESIGN.md).
 
-License
--------
+## License
 
 MIT — see [LICENSE.md](LICENSE.md).
