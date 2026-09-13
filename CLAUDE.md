@@ -58,6 +58,10 @@ one is a design decision, not a refactor — see DESIGN.md for why.
   `id__in[0]=` which Close silently ignores, returning the *unfiltered* collection.
 - **Response keys are literal.** No dot notation, ever: Close names custom fields
   `custom.cf_xxxxxxxx`.
+- **The PSR-18 client is always passed, never discovered.** PSR-17 factories are optional and
+  found by `Support\Psr17Discovery`, by class name. Do not add `php-http/discovery` to `require`:
+  it is a Composer plugin a consumer may refuse. It is in the dev tree only because
+  `php-http/mock-client` needs it, and `allow-plugins` declines it.
 - **`Authentication::describe()` must never return the secret.** It is written to the log on every
   request.
 - **The error body shape is unverified.** Close documents neither its keys nor its structure.

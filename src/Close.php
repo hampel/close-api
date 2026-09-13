@@ -6,6 +6,7 @@ namespace Hampel\CloseApi;
 
 use Hampel\CloseApi\Auth\ApiKey;
 use Hampel\CloseApi\Auth\Authentication;
+use Hampel\CloseApi\Http\DefaultRetryPolicy;
 use Hampel\CloseApi\Http\RetryPolicy;
 use Hampel\CloseApi\Http\Transport;
 use Hampel\CloseApi\Resource\Activities;
@@ -24,18 +25,17 @@ use Hampel\CloseApi\Resource\Statuses;
 use Hampel\CloseApi\Resource\StatusType;
 use Hampel\CloseApi\Resource\Tasks;
 use Hampel\CloseApi\Resource\Users;
-use Http\Discovery\Psr17FactoryDiscovery;
-use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use SensitiveParameter;
 
 /**
  * The entry point.
  *
- *     $close = Close::withApiKey($key);
+ *     $close = Close::withApiKey($key, $httpClient);
  *     $lead  = $close->leads()->get('lead_abc123');
  *
  * The resources here cover what applications actually use. Close publishes 302
@@ -58,21 +58,29 @@ final class Close
     }
 
     /**
-     * Build a client from an API key, discovering an installed PSR-18
-     * implementation and PSR-17 factories.
+     * The short form: an API key and the PSR-18 client to send requests with.
      *
-     * Convenient rather than magic: it needs a PSR-18 client to be installed —
-     * `composer require guzzlehttp/guzzle` if there is no preference — and
-     * throws a discovery exception naming what is missing if there is not.
-     * Construct a Transport directly to choose the implementation yourself.
+     * Everything the Transport takes is still available on it; this exists
+     * because building an ApiKey and a Transport only to accept their defaults is
+     * ceremony, and ceremony in an example is what gets copied. The PSR-17
+     * factories are found when omitted; the HTTP client never is.
      */
     public static function withApiKey(
         #[SensitiveParameter] string $apiKey,
-        ?ClientInterface $httpClient = null,
+        ClientInterface $httpClient,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
         ?LoggerInterface $logger = null,
         ?RetryPolicy $retryPolicy = null,
     ): self {
-        return self::with(new ApiKey($apiKey), $httpClient, $logger, $retryPolicy);
+        return self::with(
+            new ApiKey($apiKey),
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+            $logger,
+            $retryPolicy,
+        );
     }
 
     /**
@@ -80,22 +88,19 @@ final class Close
      */
     public static function with(
         Authentication $auth,
-        ?ClientInterface $httpClient = null,
+        ClientInterface $httpClient,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
         ?LoggerInterface $logger = null,
         ?RetryPolicy $retryPolicy = null,
     ): self {
-        /** @var RequestFactoryInterface $requestFactory */
-        $requestFactory = Psr17FactoryDiscovery::findRequestFactory();
-        /** @var StreamFactoryInterface $streamFactory */
-        $streamFactory = Psr17FactoryDiscovery::findStreamFactory();
-
         return new self(new Transport(
             auth: $auth,
-            httpClient: $httpClient ?? Psr18ClientDiscovery::find(),
+            httpClient: $httpClient,
             requestFactory: $requestFactory,
             streamFactory: $streamFactory,
-            retryPolicy: $retryPolicy ?? new Http\DefaultRetryPolicy(),
-            logger: $logger ?? new \Psr\Log\NullLogger(),
+            retryPolicy: $retryPolicy ?? new DefaultRetryPolicy(),
+            logger: $logger ?? new NullLogger(),
         ));
     }
 

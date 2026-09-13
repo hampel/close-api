@@ -151,6 +151,27 @@ single example and presenting the guess as a contract — and a type that is
 confidently wrong is worse than an array that is honestly untyped. Typed
 entities can be layered on later, per resource, without breaking anything.
 
+### The HTTP client is passed; the factories are found
+
+`Transport` takes a PSR-18 client and never looks for one. Which client sends a
+request is a decision a host application may need to keep — its own proxy
+settings, or a policy that every outbound request goes through one stack — so a
+library that picks one silently takes that decision away.
+
+The PSR-17 factories are the opposite case: any implementation builds the same
+request, so they are optional. `Support\Psr17Discovery` looks for Guzzle's,
+Nyholm's and Diactoros' factories **by class name, checked with `instanceof`**.
+No symbol is written, so `composer-require-checker` sees nothing undeclared and
+the analysis run without dev dependencies has nothing to miss.
+
+`php-http/discovery` does the same job and is deliberately not used. It is a
+Composer plugin, and a consumer may refuse to run it —
+`"allow-plugins": {"php-http/discovery": false}` is a realistic line in an
+application's `composer.json`. It still appears in this package's development
+tree, pulled in by `php-http/mock-client`, which is why this package's own
+`composer.json` refuses it in exactly that way: the suite runs with the plugin
+declined.
+
 ### Authentication
 
 `Authentication` is an interface with two implementations: `ApiKey`, which is
@@ -213,8 +234,8 @@ lowest-dependency CI job is what keeps the claim true.
 
 The same install is why the PSR-18 choice costs nothing there: XenForo 2.3 also
 ships `psr/http-client` 1.0.3, `psr/http-factory` 1.1.0, `psr/http-message` 2.0
-and Guzzle 7.8.2, so discovery finds a working client with no added vendor
-weight.
+and Guzzle 7.8.2, so a consumer passes the Guzzle client already present, the
+PSR-17 factories are found beside it, and nothing is added to the vendor tree.
 
 
 Questions only a live call can settle

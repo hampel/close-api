@@ -98,7 +98,7 @@ final class CloseTest extends TestCase
     }
 
     #[Test]
-    public function it_builds_a_client_from_an_api_key_by_discovering_an_implementation(): void
+    public function it_builds_a_client_from_an_api_key_and_a_given_http_client(): void
     {
         $close = Close::withApiKey('api_test', $this->http);
 

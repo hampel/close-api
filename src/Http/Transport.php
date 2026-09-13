@@ -27,6 +27,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Hampel\CloseApi\Support\Psr17Discovery;
 use Psr\Log\NullLogger;
 
 /**
@@ -60,16 +61,36 @@ final class Transport
 
     private string $baseUri;
 
+    private readonly RequestFactoryInterface $requestFactory;
+
+    private readonly StreamFactoryInterface $streamFactory;
+
+    /**
+     * The PSR-18 client is always passed and never discovered: which HTTP client
+     * sends the request is a decision a host application may need to keep, for
+     * its own proxy settings or outbound-request policy. The PSR-17 factories are
+     * a different matter - any implementation builds the same request - so they
+     * are found when omitted. See Support\Psr17Discovery.
+     */
     public function __construct(
         private readonly Authentication $auth,
         private readonly ClientInterface $httpClient,
-        private readonly RequestFactoryInterface $requestFactory,
-        private readonly StreamFactoryInterface $streamFactory,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
         private readonly RetryPolicy $retryPolicy = new DefaultRetryPolicy(),
         private readonly Sleeper $sleeper = new SystemSleeper(),
         private readonly LoggerInterface $logger = new NullLogger(),
         string $baseUri = self::BASE_URI,
     ) {
+        if ($requestFactory === null || $streamFactory === null) {
+            [$foundRequest, $foundStream] = Psr17Discovery::find();
+
+            $requestFactory ??= $foundRequest;
+            $streamFactory ??= $foundStream;
+        }
+
+        $this->requestFactory = $requestFactory;
+        $this->streamFactory = $streamFactory;
         $this->baseUri = rtrim($baseUri, '/').'/';
     }
 

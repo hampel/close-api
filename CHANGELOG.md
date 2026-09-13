@@ -23,9 +23,11 @@ CHANGELOG
   `Exception\CloseApiException`
 * Automatic use of Close's `_params` body with an `x-http-method-override: GET`
   header once a GET's query string would exceed the practical URL limit
-* `Close` — the entry point, with `Close::withApiKey()` discovering an installed
+* `Close` — the entry point, with `Close::withApiKey()` taking an API key and a
   PSR-18 client, and `transport()` as a supported route to any endpoint the
   resources do not wrap
+* PSR-17 factories are optional: when none are passed, Guzzle's, Nyholm's or
+  Diactoros' are found by class name, via `Support\Psr17Discovery`
 * Resources for leads, contacts, opportunities, tasks, users, the activity feed,
   notes, emails, calls, SMS, meetings, custom fields, lead and opportunity
   statuses, and the Advanced Filtering API. Each exposes only the operations
