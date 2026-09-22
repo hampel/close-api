@@ -80,17 +80,31 @@ final class Response implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Whether this is a list response.
      *
-     * A `data` array alone is not enough: an object could legitimately have a
-     * field called `data`. What makes it an envelope is the pagination marker
-     * beside it — `has_more` for the offset endpoints, `cursor` for the two
-     * that paginate by cursor. Both shapes count, because both are list
-     * responses.
+     * Close uses three envelope shapes, and all three have to count. Most list
+     * endpoints send `data` with `has_more`; the cursor-paginated ones send
+     * `data` with `cursor`; and a few — `custom_field/custom_object_type/` and
+     * `custom_object_type/`, observed 2026-09-23 — send `data` and nothing else.
+     *
+     * That last shape is why the check cannot simply require a pagination
+     * marker. It also cannot accept a bare `data` array, because a single
+     * object could legitimately carry a field of that name. The discriminator
+     * is `id`: every individual Close object has one and no envelope does, so a
+     * `data` array with no `id` beside it is a list.
+     *
+     * Getting this wrong is silent rather than loud — `data()` hands back the
+     * envelope, `count()` reports the number of keys, and nothing raises.
      */
     public function isList(): bool
     {
-        return isset($this->body['data'])
-            && is_array($this->body['data'])
-            && (array_key_exists('has_more', $this->body) || array_key_exists('cursor', $this->body));
+        if (! isset($this->body['data']) || ! is_array($this->body['data'])) {
+            return false;
+        }
+
+        if (array_key_exists('has_more', $this->body) || array_key_exists('cursor', $this->body)) {
+            return true;
+        }
+
+        return ! array_key_exists('id', $this->body);
     }
 
     /**

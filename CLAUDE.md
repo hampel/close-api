@@ -20,12 +20,18 @@ vendor/bin/phpunit tests/Http/TransportTest.php        # one file
 vendor/bin/phpunit --filter it_adds_the_trailing_slash # one test
 ```
 
-## Nothing here has been run against the live API
+## The suite cannot tell you Close still agrees
 
-The suite, the static analysis and the endpoint inventory all pass without a single real call
-having been made, so treat "the tests are green" as "the requests are built as intended", not as
-"Close agrees". The closing section of `DESIGN.md` lists the specific questions still open, and
-settling them needs an API key and an organization it is safe to write to.
+A green suite means the requests are built as intended, not that the API accepts them: the tests
+mock the HTTP client, so they can only confirm what this package already believes.
+
+`harness/` is where that gets checked, against a real organization. The reads have been run; no
+write exercise exists yet. The closing section of `DESIGN.md` lists what is still unverified.
+
+The first harness run found a defect the whole suite agreed with: `Response::isList()` required
+`has_more` or `cursor`, and two endpoints answer with `data` alone, so `data()` handed back the
+envelope and `count()` returned the number of keys. Nothing raised. Expect more of that shape —
+it is the class of bug no offline check can reach.
 
 ## Read DESIGN.md first
 
@@ -66,8 +72,28 @@ one is a design decision, not a refactor — see DESIGN.md for why.
   request.
 - **The error body shape is unverified.** Close documents neither its keys nor its structure.
   `Transport::message()` searches plausible keys and falls back to the status line; nothing asserts
-  a shape. DESIGN.md's closing section lists this and the other questions a live call would settle —
-  nothing here has ever spoken to Close.
+  a shape. DESIGN.md's closing section lists this and the other questions a live call would settle;
+  an empty organization raises none of them.
+
+## The harness
+
+`harness/` holds `hampel/rig` exercises that drive the real API. They are not tests: they assert
+nothing and return no verdict, they are read by a person, and they reach outside this machine.
+
+```bash
+vendor/bin/rig                 # list exercises
+vendor/bin/rig inventory       # read-only: whose key is this, and is the organization empty
+```
+
+`CLOSE_API_KEY` comes from `.env` at the package root (see `.env.example`). Rig withholds that file
+when `CLAUDECODE` is set, so an exercise run by an agent fails for want of a credential by design —
+`--agent-may-load-env` overrides it, and is only for an agent that has been asked to do the real
+thing.
+
+Every exercise so far is read-only and says so on its first line. A write exercise must guard
+itself twice, name its throwaway records `ZZ DELETE ME ...` so a failed cleanup is obvious in the
+Close UI, and clean up in a `finally` — with any `exit()` outside that block, because PHP does not
+run `finally` on `exit()`.
 
 ## Testing
 

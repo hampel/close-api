@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+Unreleased
+----------
+
+**Fixed**
+
+* `Response::data()` returned the whole envelope instead of the records for
+  endpoints that answer with `data` and no pagination marker beside it —
+  `custom_field/custom_object_type/` and `custom_object_type/`. `isList()` was
+  false for those, so `count()` reported the number of envelope keys and an
+  empty collection read as one record. `data()` now returns the records from all
+  three envelope shapes Close uses: `data` with `has_more`, `data` with
+  `cursor`, and `data` alone
+
 0.1.0 (2026-09-13)
 ------------------
 

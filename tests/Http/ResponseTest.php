@@ -83,6 +83,66 @@ final class ResponseTest extends TestCase
     }
 
     /**
+     * Observed against the live API on 2026-09-23: custom_field/custom_object_type/
+     * and custom_object_type/ answer with data and nothing else - no has_more,
+     * no cursor. Requiring a pagination marker made data() hand back the
+     * envelope and count() report the number of keys, silently, with no error
+     * anywhere.
+     */
+    #[Test]
+    public function a_bare_data_envelope_with_no_pagination_marker_is_still_a_list(): void
+    {
+        $response = new Response(['data' => [['id' => 'cf_a'], ['id' => 'cf_b']]], 200);
+
+        $this->assertTrue($response->isList());
+        $this->assertSame([['id' => 'cf_a'], ['id' => 'cf_b']], $response->data());
+        $this->assertCount(2, $response->data());
+    }
+
+    #[Test]
+    public function an_empty_bare_data_envelope_is_a_list_of_nothing(): void
+    {
+        $response = new Response(['data' => []], 200);
+
+        $this->assertTrue($response->isList());
+        $this->assertSame([], $response->data());
+    }
+
+    /**
+     * Every individual Close object carries an id and no envelope does, so that
+     * is what separates a bare envelope from an object with a data field.
+     */
+    #[Test]
+    public function an_object_carrying_a_data_field_is_not_an_envelope(): void
+    {
+        $response = new Response(['id' => 'cotype_x', 'name' => 'Product', 'data' => ['a', 'b']], 200);
+
+        $this->assertFalse($response->isList());
+        $this->assertSame(['id' => 'cotype_x', 'name' => 'Product', 'data' => ['a', 'b']], $response->data());
+    }
+
+    /**
+     * lead/, task/ and opportunity/ send counts and aggregates alongside the
+     * records - opportunity/ adds eighteen of them. Extra keys must not stop a
+     * response being recognised as a list.
+     */
+    #[Test]
+    public function extra_envelope_keys_do_not_stop_it_being_a_list(): void
+    {
+        $response = new Response([
+            'data' => [['id' => 'oppo_a']],
+            'has_more' => false,
+            'total_results' => 1,
+            'expected_value_annual' => 0,
+            'total_value_monthly_formatted' => '$0',
+        ], 200);
+
+        $this->assertTrue($response->isList());
+        $this->assertSame([['id' => 'oppo_a']], $response->data());
+        $this->assertSame(1, $response['total_results']);
+    }
+
+    /**
      * `data` alone is not a list envelope - a single object could legitimately
      * have a field called data. The pagination marker beside it is what makes
      * it one.

@@ -195,10 +195,17 @@ HTTP boundary does not make the suite able to detect that the remote API
 changed; nothing offline can do that. What it buys is that a failure means the
 request was wrong, rather than that a mock expectation was restated.
 
-Detecting drift is a harness's job, not the suite's, and there is no `harness/`
-yet — writing one needs an API key and an organization it is safe to write to.
-So every question listed at the end of this document is still open, and
-everything here is verified offline only.
+Detecting drift is a harness's job, not the suite's. `harness/inventory.php` is
+the read-only half of that: it reports which organization a key belongs to and
+what that organization already holds, which is what has to be known before any
+exercise writes anything.
+
+It earned its place on the first run. `Response::isList()` required `has_more`
+or `cursor` beside `data`, and `custom_field/custom_object_type/` and
+`custom_object_type/` send neither — so `data()` returned the envelope,
+`count()` returned the number of keys, and an empty organization reported a
+custom field it did not have. The suite passed throughout, because every
+fixture in it had been written from the same assumption as the code.
 
 
 Scope
@@ -241,9 +248,11 @@ PSR-17 factories are found beside it, and nothing is added to the vendor tree.
 Questions only a live call can settle
 ------------------------------------
 
-Nothing in this package has ever spoken to Close. Everything above was verified
-against the spec, the documentation and a mock PSR-18 client; nothing was
-verified against the API itself.
+Everything above was verified against the spec, the documentation and a mock
+PSR-18 client. The read-only exercise in `harness/` has since been run against a
+real organization, which settled the envelope shapes and nothing else on this
+list: an empty organization exercises no error path, no rate limit and no
+write.
 
 That distinction matters more here than it would in most packages, because the
 thing being modelled is a remote system that changes without telling anyone. A
@@ -252,8 +261,13 @@ nothing about whether Close still agrees.
 
 These are the specific questions outstanding. Each is a place where the code
 currently guesses, defensibly, and would be tightened by one observation. A
-harness of exercises driving the real API is the way to settle them, and is
-worth writing the day there is a key and an organization safe to write to.
+write exercise in `harness/` is the way to settle most of what remains.
+
+Observed on 2026-09-23, and worth recording because it bears on the first three:
+a `GET` of `custom_object_type/` came back with **no `RateLimit` header at all**,
+so `lastRateLimit()` returning null is an ordinary outcome rather than a sign of
+trouble. Close's documentation says only that "most" responses carry it; that is
+now confirmed rather than assumed.
 
 1. **What shape is an error body?** Documented nowhere — not in the prose, not
    in the spec, which gives error responses a description and no schema.

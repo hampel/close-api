@@ -194,10 +194,11 @@ carry a search term. Choose the level accordingly.
 
 ## Status
 
-Pre-1.0, and honestly so: the whole package is verified against Close's OpenAPI
-spec, its documentation and a mock PSR-18 client, and **not once against the
-live API**. The suite being green means the requests are built the way this
-package intends. It does not mean Close agrees.
+Pre-1.0, and honestly so. The package is verified against Close's OpenAPI spec,
+its documentation and a mock PSR-18 client; against the live API, only its read
+paths have been exercised, and only against an empty organization. The suite
+being green means the requests are built the way this package intends. It does
+not mean Close agrees.
 
 The places where this package currently infers rather than knows — the error
 body's shape most of all — are listed at the end of the

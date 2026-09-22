@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hampel\CloseApi\Tests\Support;
 
+use GuzzleHttp\Psr7\HttpFactory;
 use Hampel\CloseApi\Auth\ApiKey;
 use Hampel\CloseApi\Close;
 use Hampel\CloseApi\Exception\RuntimeException;
@@ -42,16 +43,17 @@ final class Psr17DiscoveryTest extends TestCase
     }
 
     /**
-     * nyholm/psr7 is the only implementation in the development tree, so it is
-     * what is found here. Guzzle and Diactoros are exercised through from().
+     * Guzzle and Nyholm are both in the development tree; Guzzle comes first in
+     * the candidate list, so it is what is found. Diactoros, and the order in
+     * which candidates are tried, are exercised through from().
      */
     #[Test]
-    public function in_the_development_tree_it_finds_nyholm(): void
+    public function in_the_development_tree_it_finds_guzzle(): void
     {
         [$request, $stream] = Psr17Discovery::find();
 
-        $this->assertInstanceOf(Psr17Factory::class, $request);
-        $this->assertSame($request, $stream, 'Nyholm ships one class for both roles; it should be built once.');
+        $this->assertInstanceOf(HttpFactory::class, $request);
+        $this->assertSame($request, $stream, 'Guzzle ships one class for both roles; it should be built once.');
     }
 
     #[Test]
