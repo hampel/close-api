@@ -1,14 +1,8 @@
 CHANGELOG
 =========
 
-Unreleased
-----------
-
-**Added**
-
-* `harness/` — `hampel/rig` exercises that drive the real API: `inventory`
-  (read-only), `writes` (creates and deletes, guarded twice) and `cleanup`
-  (lists by default, deletes marked records on the same opt-in)
+0.1.1 (2026-09-23)
+------------------
 
 **Changed**
 
