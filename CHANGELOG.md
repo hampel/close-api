@@ -4,6 +4,21 @@ CHANGELOG
 Unreleased
 ----------
 
+**Added**
+
+* `harness/` — `hampel/rig` exercises that drive the real API: `inventory`
+  (read-only), `writes` (creates and deletes, guarded twice) and `cleanup`
+  (lists by default, deletes marked records on the same opt-in)
+
+**Changed**
+
+* A validation failure now puts Close's own field errors in the exception
+  message. Close answers a 400 with `{"errors": [], "field-errors": {…}}`, so a
+  message built from `errors` alone fell back to the status line and reported
+  `Bad Request` while discarding the sentence that said what was wrong
+* `DeepPaginationException` passes Close's own message through rather than
+  describing the cap as unpublished — the error names the number
+
 **Fixed**
 
 * `Response::data()` returned the whole envelope instead of the records for

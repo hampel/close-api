@@ -352,9 +352,22 @@ final class Transport
      * Build a message from whichever of the plausible error keys is present.
      *
      * Close documents neither the error body's shape nor its keys, and its
-     * OpenAPI spec gives error responses a description and no schema. So this
-     * looks for the forms that have been observed and falls back to the status
-     * line — it never assumes it found one.
+     * OpenAPI spec gives error responses a description and no schema. Two
+     * shapes were observed against the live API on 2026-09-23, and they do not
+     * overlap:
+     *
+     *     401, 404:  {"error": "Unauthorized"}
+     *     400:       {"errors": [], "field-errors": {"_limit": "Input should be
+     *                 less than or equal to 200"}}
+     *
+     * The second is why `field-errors` is read here and not only on the
+     * exception. A validation failure is the commonest error there is, and on
+     * that shape every other key is empty — so a message built from `errors`
+     * alone fell back to the status line and said "Bad Request", discarding the
+     * one sentence that said what was actually wrong.
+     *
+     * Still no assumption that a shape was found: anything unrecognised falls
+     * through to the status line.
      *
      * @param  array<array-key, mixed>  $body
      */
@@ -366,12 +379,38 @@ final class Transport
             }
         }
 
-        if (isset($body['errors']) && is_array($body['errors']) && $body['errors'] !== []) {
-            $strings = array_filter($body['errors'], is_string(...));
+        $parts = [];
 
-            if ($strings !== []) {
-                return sprintf('Close API error %d: %s', $status, implode('; ', $strings));
+        if (isset($body['errors']) && is_array($body['errors'])) {
+            foreach ($body['errors'] as $error) {
+                if (is_string($error) && $error !== '') {
+                    $parts[] = $error;
+                }
             }
+        }
+
+        foreach (['field-errors', 'field_errors'] as $key) {
+            if (! isset($body[$key]) || ! is_array($body[$key])) {
+                continue;
+            }
+
+            foreach ($body[$key] as $field => $error) {
+                // A field error is usually a sentence, but Close is free to
+                // send a list of them and has no schema saying otherwise.
+                $text = is_array($error)
+                    ? implode(' ', array_filter($error, is_string(...)))
+                    : (is_string($error) ? $error : '');
+
+                if ($text !== '') {
+                    $parts[] = sprintf('%s: %s', $field, $text);
+                }
+            }
+
+            break;
+        }
+
+        if ($parts !== []) {
+            return sprintf('Close API error %d: %s', $status, implode('; ', $parts));
         }
 
         return $reason === ''

@@ -196,6 +196,29 @@ if ($populated === []) {
     $io->line('  Do NOT run write exercises against it until you know whose data that is.');
 }
 
+// A count on its own says nothing about WHAT is there. Name the records, so a
+// non-empty organization can be judged rather than just flagged.
+foreach ([
+    'leads' => [static fn () => $close->leads()->list(['_limit' => 20]), 'name'],
+    'contacts' => [static fn () => $close->contacts()->list(['_limit' => 20]), 'name'],
+    'opportunities' => [static fn () => $close->opportunities()->list(['_limit' => 20]), 'note'],
+] as $label => [$list, $field]) {
+    [$count] = $records[$label];
+
+    if ($count < 1) {
+        continue;
+    }
+
+    $io->line();
+    $io->line(sprintf('  %s:', $label));
+
+    foreach ($list()->data() as $record) {
+        if (is_array($record)) {
+            $io->line(sprintf('    %s  %s', $record['id'] ?? '?', $record[$field] ?? '(no '.$field.')'));
+        }
+    }
+}
+
 // A count on its own cannot say whether something is a Close default or
 // somebody's leftover. Name them.
 foreach (CustomFieldType::cases() as $type) {

@@ -370,6 +370,96 @@ final class TransportTest extends TestCase
         $this->transport()->post('lead/', []);
     }
 
+    /**
+     * The exact body returned by Close on 2026-09-23 for _limit=1000. A
+     * validation failure is the commonest error there is, and on this shape
+     * "errors" is empty - so reading it alone produced "Bad Request" and threw
+     * away the only sentence that said what was wrong.
+     */
+    #[Test]
+    public function a_validation_failure_puts_the_field_errors_in_the_message(): void
+    {
+        $this->queue(400, [
+            'errors' => [],
+            'field-errors' => ['_limit' => 'Input should be less than or equal to 200'],
+        ]);
+
+        try {
+            $this->transport()->get('lead/', ['_limit' => 1000]);
+            $this->fail('Expected a BadRequestException.');
+        } catch (BadRequestException $e) {
+            $this->assertSame(
+                'Close API error 400: _limit: Input should be less than or equal to 200',
+                $e->getMessage(),
+            );
+            $this->assertSame(['_limit' => 'Input should be less than or equal to 200'], $e->fieldErrors());
+        }
+    }
+
+    #[Test]
+    public function several_field_errors_are_all_named(): void
+    {
+        $this->queue(400, [
+            'errors' => [],
+            'field-errors' => ['status_id' => 'Not a valid choice.', 'name' => 'Required.'],
+        ]);
+
+        try {
+            $this->transport()->post('lead/', []);
+            $this->fail('Expected a BadRequestException.');
+        } catch (BadRequestException $e) {
+            $this->assertStringContainsString('status_id: Not a valid choice.', $e->getMessage());
+            $this->assertStringContainsString('name: Required.', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function a_field_error_carrying_a_list_is_joined_rather_than_dropped(): void
+    {
+        $this->queue(400, ['field-errors' => ['emails' => ['Invalid address.', 'Duplicate.']]]);
+
+        try {
+            $this->transport()->post('contact/', []);
+            $this->fail('Expected a BadRequestException.');
+        } catch (BadRequestException $e) {
+            $this->assertStringContainsString('emails: Invalid address. Duplicate.', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function top_level_errors_and_field_errors_both_appear(): void
+    {
+        $this->queue(400, [
+            'errors' => ['Something broad went wrong'],
+            'field-errors' => ['name' => 'Required.'],
+        ]);
+
+        try {
+            $this->transport()->post('lead/', []);
+            $this->fail('Expected a BadRequestException.');
+        } catch (BadRequestException $e) {
+            $this->assertStringContainsString('Something broad went wrong', $e->getMessage());
+            $this->assertStringContainsString('name: Required.', $e->getMessage());
+        }
+    }
+
+    /**
+     * The other shape observed the same day: 401 and 404 send a plain string
+     * under "error" and nothing else.
+     */
+    #[Test]
+    public function the_plain_error_string_shape_is_used_as_the_message(): void
+    {
+        $this->queue(401, ['error' => 'Unauthorized']);
+
+        try {
+            $this->transport()->get('me/');
+            $this->fail('Expected an AuthenticationException.');
+        } catch (AuthenticationException $e) {
+            $this->assertSame('Close API error 401: Unauthorized', $e->getMessage());
+        }
+    }
+
     #[Test]
     public function it_falls_back_to_the_status_when_the_body_says_nothing_it_recognises(): void
     {

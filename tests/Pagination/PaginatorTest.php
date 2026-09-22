@@ -144,9 +144,35 @@ final class PaginatorTest extends TestCase
         } catch (DeepPaginationException $e) {
             $this->assertSame(2, $e->skip());
             $this->assertSame(1, $e->pagesFetched());
-            $this->assertStringContainsString('_skip limit', $e->getMessage());
+            $this->assertStringContainsString('_skip cap', $e->getMessage());
             $this->assertStringContainsString('date_created', $e->getMessage());
             $this->assertStringContainsString('Invalid skip', $e->getMessage(), 'It keeps the original error.');
+        }
+    }
+
+    /**
+     * Close's own message for this names the cap - "max_skip = 35000" on lead/,
+     * observed 2026-09-23 - which is more than the wrapper can infer. The
+     * wrapper must not bury it.
+     */
+    #[Test]
+    public function closes_own_explanation_survives_the_wrapping(): void
+    {
+        $this->page(['lead_a'], true);
+        $this->queue(400, [
+            'errors' => [],
+            'field-errors' => ['_skip' => 'The skip you set is larger than the maximum skip for this resource (max_skip = 35000).'],
+        ]);
+
+        try {
+            $this->paginator(pageSize: 1)->all();
+            $this->fail('Expected a DeepPaginationException.');
+        } catch (DeepPaginationException $e) {
+            $this->assertStringContainsString('max_skip = 35000', $e->getMessage());
+            $this->assertSame(
+                ['_skip' => 'The skip you set is larger than the maximum skip for this resource (max_skip = 35000).'],
+                $e->fieldErrors(),
+            );
         }
     }
 

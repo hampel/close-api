@@ -245,51 +245,107 @@ and Guzzle 7.8.2, so a consumer passes the Guzzle client already present, the
 PSR-17 factories are found beside it, and nothing is added to the vendor tree.
 
 
-Questions only a live call can settle
-------------------------------------
+What the live runs settled
+--------------------------
 
 Everything above was verified against the spec, the documentation and a mock
-PSR-18 client. The read-only exercise in `harness/` has since been run against a
-real organization, which settled the envelope shapes and nothing else on this
-list: an empty organization exercises no error path, no rate limit and no
-write.
+PSR-18 client. The exercises in `harness/` have since been run against a real
+organization — reads on 23 September 2026, writes the same day — and these are
+the answers. They are dated because they describe a remote system that changes
+without telling anyone.
 
-That distinction matters more here than it would in most packages, because the
-thing being modelled is a remote system that changes without telling anyone. A
-green suite means the requests are built the way this package intends. It says
-nothing about whether Close still agrees.
+### The error body has two shapes, not one
 
-These are the specific questions outstanding. Each is a place where the code
-currently guesses, defensibly, and would be tightened by one observation. A
-write exercise in `harness/` is the way to settle most of what remains.
+They do not overlap, and the difference matters:
 
-Observed on 2026-09-23, and worth recording because it bears on the first three:
-a `GET` of `custom_object_type/` came back with **no `RateLimit` header at all**,
-so `lastRateLimit()` returning null is an ordinary outcome rather than a sign of
+```json
+401, 404:  {"error": "Unauthorized"}
+400:       {"errors": [], "field-errors": {"_limit": "Input should be less than or equal to 200"}}
+```
+
+A validation failure is the commonest error there is, and on that shape every
+other key is empty — so a message assembled from `error`, `message`, `detail`
+and `errors` found nothing and fell back to the status line, reporting
+`Bad Request` and discarding the one sentence that said what was wrong.
+`Transport::message()` now reads `field-errors` too. `field-errors` is confirmed
+as the key `ResponseException::fieldErrors()` was already guessing at.
+
+### The pagination caps, for leads
+
+`_limit` is **200** — `_limit=200` is accepted and `_limit=1000` is refused —
+and `_skip` is **35000**. Both per resource, still unpublished, and both
+reported as ordinary field errors rather than anything special. Close's own
+message for the skip cap names the number and suggests what to do instead —
+more than `DeepPaginationException` can infer — so that exception passes Close's
+text through beneath its own, and no longer claims the cap is unpublished when
+the error is about to state it.
+
+`Paginator::DEFAULT_PAGE_SIZE` stays at 100, which is Close's own default and
+half the ceiling.
+
+### `lead_id` is not required, and that is worse than it failing
+
+`POST /contact/` and `POST /opportunity/` with no `lead_id` do **not** fail.
+Close creates an empty, unnamed lead and hangs the record on it. Two probes
+written to expect a 400 were accepted, and each run left three real records
+behind — a lead nobody named, invisible to any sweep that matches on a name.
+
+Nothing in the package can prevent that and nothing should try: it is the API's
+behaviour, and a client that refused the call would be refusing something Close
+allows. It is written down here because the failure is silent at every level —
+no error, no warning, and a lead that looks like it was always there.
+
+### A delete is not immediately visible
+
+A `GET` of a lead immediately after deleting it returned **200**. The second
+`DELETE` of the same lead correctly returned 404, so the delete had happened;
+the read path was serving a stale copy. The list index lags further still —
+between 30 and 60 seconds in these runs before a deleted lead stopped being
+counted.
+
+So a write followed straight away by a read of the same record can disagree with
+itself, and any harness that checks its own cleanup has to wait before believing
+the answer.
+
+### Not every response carries the rate limit header
+
+A `GET` of `custom_object_type/` came back with no `RateLimit` header at all, so
+`lastRateLimit()` returning null is an ordinary outcome rather than a sign of
 trouble. Close's documentation says only that "most" responses carry it; that is
 now confirmed rather than assumed.
 
-1. **What shape is an error body?** Documented nowhere — not in the prose, not
-   in the spec, which gives error responses a description and no schema.
-   `Transport::message()` searches `error`, `message`, `detail` and `errors` and
-   falls back to the status line; `ResponseException::fieldErrors()` looks for
-   `field-errors`. All of that is inference from what has been seen elsewhere.
-2. **Where are the `_limit` and `_skip` caps?** Per resource, unpublished. Until
-   one is observed, `DeepPaginationException` can only say a later page was
-   rejected and that the cap is the likely reason.
-3. **What does a 429 actually look like?** The `RateLimit` header is documented
+### Other things the write run confirmed
+
+- Nested `contacts` on `POST /lead/` are accepted and returned, despite the
+  field being marked deprecated on the way out.
+- An unknown field on a lead create is accepted rather than rejected, and the
+  lead is created. Whether Close stores it or drops it was not measured.
+- A `lead_id` filter on `activity/` is honoured: filtered and unfiltered counts
+  differed against two leads.
+- `?query=` on `GET /lead/` is honoured too, which the package this replaced had
+  no evidence for.
+- `DELETE` answers 200 with an empty body.
+
+
+Questions still open
+--------------------
+
+Each is a place where the code guesses, defensibly, and would be tightened by
+one observation.
+
+1. **What does a 429 actually look like?** The `RateLimit` header is documented
    precisely enough to parse with confidence, but no 429 has been seen, so the
-   retry path has never run against a real one.
-4. **Does `Retry-After` really round `reset` up?** The documentation says so.
+   retry path has never run against a real one. Provoking one deliberately is
+   not something to do casually against an organization someone else shares.
+2. **Does `Retry-After` really round `reset` up?** The documentation says so.
    `RateLimitException::waitSeconds()` prefers `reset` on that basis.
-5. **Do the endpoint groups behave as described?** Whether two paths share a
+3. **Do the endpoint groups behave as described?** Whether two paths share a
    limit is not something a client can discover except by observation.
-6. **Does the `_params` override work as documented on the endpoints this
+4. **Does the `_params` override work as documented on the endpoints this
    package uses it for?** The mechanism is documented generally; it has not been
    exercised against any specific endpoint.
-7. **Is `POST /data/search/` still shaped the way the prose says?** It is absent
+5. **Is `POST /data/search/` still shaped the way the prose says?** It is absent
    from the spec, so the prose is the only description of it, and prose drifts
-   more quietly than a schema.
-
-Two of these — 1 and 2 — are the ones where a wrong guess produces a confusing
-error rather than a wrong result. The rest would produce a wrong result.
+   more quietly than a schema. The empty organization gave it nothing to match.
+6. **Where do the caps fall on resources other than leads?** Both are documented
+   as varying per resource; only `lead/` has been measured.

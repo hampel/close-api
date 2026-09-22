@@ -60,7 +60,10 @@
     },
     "scripts": {
         "test": "phpunit",
-        "analyse": "phpstan analyse",
+        "analyse": [
+            "phpstan analyse",
+            "phpstan analyse -c phpstan-harness.neon"
+        ],
         "format": "pint",
         "lint": "pint --test",
         "check": [

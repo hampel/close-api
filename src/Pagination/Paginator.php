@@ -175,9 +175,10 @@ final class Paginator implements IteratorAggregate
             throw new DeepPaginationException(
                 sprintf(
                     'Close rejected page %d of %s at _skip=%d. This is likely the per-resource '
-                    .'_skip limit, which Close caps and does not publish; its documented answer '
-                    .'to a long collection is to chunk the query by date_created, or to use the '
-                    .'Export API. The original error was: %s',
+                    .'_skip cap, which varies by resource and is not documented anywhere but the '
+                    .'error itself - so read the message below, which usually names the number. '
+                    .'The answer to a long collection is to chunk the query by date_created, or '
+                    .'to use the Export API. The original error was: %s',
                     $fetched + 1,
                     $this->path,
                     $skip,

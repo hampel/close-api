@@ -1,0 +1,17 @@
+# The harness, analysed separately and far below the level src/ and tests/ get.
+#
+# An exercise reads an untyped API response on purpose - Response::data() hands
+# back mixed, and that is the design rather than an oversight - so level 10 here
+# produces pages of "cannot cast mixed to string" and nothing else. Fighting
+# that would make the exercises worse to read for no gain.
+#
+# Level 0 still catches the one failure that actually bit: a class that does not
+# exist. `$result instanceof Response` with the import missing is silently FALSE
+# rather than an error, so a registration step quietly never ran and the
+# exercise left real records behind in a live CRM. Nothing else in the toolchain
+# was looking at harness/ at all.
+parameters:
+    level: 0
+
+    paths:
+        - harness

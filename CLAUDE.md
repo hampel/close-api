@@ -83,17 +83,34 @@ nothing and return no verdict, they are read by a person, and they reach outside
 ```bash
 vendor/bin/rig                 # list exercises
 vendor/bin/rig inventory       # read-only: whose key is this, and is the organization empty
+vendor/bin/rig cleanup         # lists records the harness left behind; deletes on opt-in
+vendor/bin/rig writes          # CREATES AND DELETES real records; guarded twice
 ```
+
+Run `inventory` before `writes`, every time. A key made in the wrong organization authenticates
+perfectly well and writes to someone else's data, so the organization name is the check, not
+whether the call succeeded.
 
 `CLOSE_API_KEY` comes from `.env` at the package root (see `.env.example`). Rig withholds that file
 when `CLAUDECODE` is set, so an exercise run by an agent fails for want of a credential by design —
 `--agent-may-load-env` overrides it, and is only for an agent that has been asked to do the real
 thing.
 
-Every exercise so far is read-only and says so on its first line. A write exercise must guard
-itself twice, name its throwaway records `ZZ DELETE ME ...` so a failed cleanup is obvious in the
-Close UI, and clean up in a `finally` — with any `exit()` outside that block, because PHP does not
-run `finally` on `exit()`.
+Each exercise says its mode on its first line. `writes` needs both `CLOSE_ALLOW_WRITES=yes` and,
+under an agent, `CLOSE_AGENT_MAY_WRITE=yes` — the second must never live in `.env`, because the
+point of it is that it cannot be set in advance. Throwaway records are named `ZZ DELETE ME ...` so
+a failed cleanup is obvious in the Close UI, and cleanup runs in a `finally` with every `exit()`
+outside that block, because PHP does not run `finally` on `exit()`.
+
+**A probe written to expect an error must say what to delete if it is accepted instead.** Three
+probes expecting a 400 were accepted on the first live run, and each left real records behind —
+`POST /contact/` with no `lead_id` does not fail, it makes an unnamed lead to hang the contact on.
+`$probeError()` takes an `$onAccepted` callback for exactly this.
+
+`harness/` is analysed by `phpstan-harness.neon` at level 0, separately from `src/` and `tests/`,
+because an exercise reads an untyped response on purpose and level 10 buries that in `mixed`
+complaints. Level 0 still catches the failure that mattered: `instanceof` against a class whose
+import is missing is silently **false**, so a cleanup step quietly never ran.
 
 ## Testing
 

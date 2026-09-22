@@ -10,6 +10,7 @@
 /DESIGN.md      export-ignore
 /harness        export-ignore
 /phpstan.neon   export-ignore
+/phpstan-harness.neon export-ignore
 /phpunit.xml    export-ignore
 /pint.json      export-ignore
 /spec           export-ignore
