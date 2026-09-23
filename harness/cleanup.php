@@ -176,6 +176,12 @@ if ($total === 0) {
 if (! $deleting) {
     $io->warn(sprintf('%d marked record(s) left behind.', $total));
     $io->line('  Remove them with:  CLOSE_ALLOW_WRITES=yes vendor/bin/rig cleanup');
+    $io->line();
+    // Close's list index lags its deletes by up to a minute, so a record listed
+    // straight after another exercise may already be gone. Re-run before
+    // treating this as a leak - a deleted lead has shown up here once.
+    $io->line('  Run straight after another exercise? Wait a minute and re-run first:');
+    $io->line('  the list index lags deletes, so a record shown here may already be gone.');
     exit(1);
 }
 
