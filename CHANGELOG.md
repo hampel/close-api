@@ -1,8 +1,6 @@
-CHANGELOG
-=========
+# CHANGELOG
 
-0.1.2 (2026-09-23)
-------------------
+## 0.1.2 (2026-09-23)
 
 **Fixed**
 
@@ -11,8 +9,7 @@ CHANGELOG
   models the body as a `oneOf` discriminated on that field, which reads as
   required and is not. Nothing is validated there now
 
-0.1.1 (2026-09-23)
-------------------
+## 0.1.1 (2026-09-23)
 
 **Changed**
 
@@ -33,8 +30,7 @@ CHANGELOG
   three envelope shapes Close uses: `data` with `has_more`, `data` with
   `cursor`, and `data` alone
 
-0.1.0 (2026-09-13)
-------------------
+## 0.1.0 (2026-09-13)
 
 **Added**
 

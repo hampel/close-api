@@ -1,5 +1,4 @@
-Design notes
-============
+# Design notes
 
 Why this package exists, what it deliberately does not do, and the facts about
 the Close API that the design is a response to. Read this before proposing a
@@ -12,8 +11,7 @@ describe a remote system that changes without notice, so the date is part of
 the claim.
 
 
-What the OpenAPI spec is, and is not
-------------------------------------
+## What the OpenAPI spec is, and is not
 
 `https://api.close.com/api/openapi.json` describes 159 paths and 302 operations
 across 64 tags. It is an excellent **inventory** and a partial **contract**, and
@@ -54,8 +52,7 @@ spelling, because an undocumented alias is exactly the kind of thing that stops
 working without notice; but code calling the plural is not broken today.
 
 
-API behaviour the design is a response to
------------------------------------------
+## API behaviour the design is a response to
 
 ### Rate limits are per endpoint group, and the groups are not published
 
@@ -123,8 +120,7 @@ workaround, and the transport uses it automatically once a query string crosses
 the threshold.
 
 
-Architecture
-------------
+## Architecture
 
 Three layers, and the boundaries are chosen so that each can be tested without
 the one below it.
@@ -214,8 +210,7 @@ custom field it did not have. The suite passed throughout, because every
 fixture in it had been written from the same assumption as the code.
 
 
-Scope
------
+## Scope
 
 The transport is complete. The resource layer is not, and is not trying to be:
 of 302 operations, roughly 60 percent are Close's own UI features — scheduling
@@ -228,8 +223,7 @@ generated inventory of everything the API offers, so "what is not covered yet"
 is always a mechanical question rather than a guess.
 
 
-Version support
----------------
+## Version support
 
 PHP 8.3 and up, with no upper bound. CI runs 8.3, 8.4 and 8.5; PHPStan analyses
 the whole range in one pass, so nothing is claimed that is not tested.
@@ -251,8 +245,7 @@ and Guzzle 7.8.2, so a consumer passes the Guzzle client already present, the
 PSR-17 factories are found beside it, and nothing is added to the vendor tree.
 
 
-What the live runs settled
---------------------------
+## What the live runs settled
 
 Everything above was verified against the spec, the documentation and a mock
 PSR-18 client. The exercises in `harness/` have since been run against a real
@@ -386,8 +379,7 @@ property of `CreateEmailActivity` in the spec.
 - `DELETE` answers 200 with an empty body.
 
 
-Questions still open
---------------------
+## Questions still open
 
 Each is a place where the code guesses, defensibly, and would be tightened by
 one observation.
