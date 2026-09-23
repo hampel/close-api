@@ -173,6 +173,8 @@ how duplicate records get created.
 Pass your own policy to change any of that:
 
 ```php
+use Hampel\CloseApi\Http\DefaultRetryPolicy;
+
 Close::withKey($apiKey, $httpClient, retryPolicy: new DefaultRetryPolicy(
     maxAttempts: 5,
     baseDelay: 1.0,
