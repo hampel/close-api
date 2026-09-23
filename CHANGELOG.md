@@ -8,6 +8,9 @@
   can be driven by a test double or a framework's sleep helper without building
   a `Transport` by hand. The retry policy was already accepted there; the
   sleeper is the other half of the same mechanism
+* `Http\NoRetryPolicy`, which never retries, so a failure reaches the caller
+  immediately. For a queue worker, a web request, or anything with its own
+  backoff, where sleeping inside the request blocks something that is waiting
 
 **Fixed**
 

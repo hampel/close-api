@@ -10,6 +10,7 @@ use Hampel\CloseApi\Exception\RateLimitException;
 use Hampel\CloseApi\Exception\ServerException;
 use Hampel\CloseApi\Exception\TransportException;
 use Hampel\CloseApi\Http\DefaultRetryPolicy;
+use Hampel\CloseApi\Http\NoRetryPolicy;
 use Hampel\CloseApi\Tests\TestCase;
 use Http\Client\Exception\NetworkException;
 use PHPUnit\Framework\Attributes\Test;
@@ -211,6 +212,42 @@ final class RetryTest extends TestCase
         foreach ($this->sleeper->slept as $n => $delay) {
             $this->assertGreaterThanOrEqual(0.0, $delay);
             $this->assertLessThanOrEqual(min(4.0, 1.0 * 2 ** $n), $delay);
+        }
+    }
+
+    /**
+     * The failure has to reach the caller promptly and intact, because the
+     * consumer is the one deciding what to do about it - a queue worker
+     * releasing the job, or a request handler giving up.
+     */
+    #[Test]
+    public function the_no_retry_policy_surfaces_a_429_immediately(): void
+    {
+        $this->queue(429, ['error' => 'slow down'], ['RateLimit' => 'limit=100, remaining=0, reset=30']);
+
+        try {
+            $this->transport(retryPolicy: new NoRetryPolicy())->get('lead/');
+            $this->fail('Expected a RateLimitException.');
+        } catch (RateLimitException $e) {
+            $this->assertSame(30.0, $e->waitSeconds(), 'Close said how long; the caller decides.');
+        }
+
+        $this->assertCount(1, $this->requests());
+        $this->assertSame([], $this->sleeper->slept, 'Nothing slept, so no worker was blocked.');
+    }
+
+    #[Test]
+    public function the_no_retry_policy_does_not_retry_a_server_error_either(): void
+    {
+        $this->queue(503, ['error' => 'unavailable']);
+
+        $this->expectException(ServerException::class);
+
+        try {
+            $this->transport(retryPolicy: new NoRetryPolicy())->get('lead/');
+        } finally {
+            $this->assertCount(1, $this->requests());
+            $this->assertSame([], $this->sleeper->slept);
         }
     }
 

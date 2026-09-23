@@ -195,6 +195,28 @@ use Hampel\CloseApi\Http\Sleeper;
 Close::withKey($apiKey, $httpClient, sleeper: $yourSleeper);
 ```
 
+### When the retry decision is not the library's
+
+Retrying means sleeping inside the request, which is right for a script and
+wrong wherever the calling process is something someone is waiting for — a queue
+worker that cannot pick up other jobs while it waits, a web request holding a
+connection open, or a caller with its own backoff that would then be applied on
+top of this one.
+
+Turn it off and handle the failure yourself:
+
+```php
+use Hampel\CloseApi\Http\NoRetryPolicy;
+
+$close = Close::withKey($apiKey, $httpClient, retryPolicy: new NoRetryPolicy());
+
+try {
+    $close->leads()->list();
+} catch (RateLimitException $e) {
+    $job->release($e->waitSeconds());   // Close said how long; you decide what to do
+}
+```
+
 ## Logging
 
 Pass any PSR-3 logger. Requests and responses are logged at `debug`, retries at
