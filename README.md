@@ -196,15 +196,14 @@ carry a search term. Choose the level accordingly.
 
 ## Status
 
-Pre-1.0, and honestly so. The package is verified against Close's OpenAPI spec,
-its documentation and a mock PSR-18 client; against the live API, only its read
-paths have been exercised, and only against an empty organization. The suite
-being green means the requests are built the way this package intends. It does
-not mean Close agrees.
+Pre-1.0. Reads, writes, both paginators and the Advanced Filtering API have been
+exercised against a live organization; the suite covers the rest against a mock
+PSR-18 client. What has not been seen is a rate-limited response — Close has not
+returned one, or the `RateLimit` header, in any run so far — so the retry path is
+built from documentation alone.
 
-The places where this package currently infers rather than knows — the error
-body's shape most of all — are listed at the end of the
-[design notes](https://github.com/hampel/close-api/blob/master/DESIGN.md).
+The places where this package infers rather than knows are listed at the end of
+the [design notes](https://github.com/hampel/close-api/blob/master/DESIGN.md).
 
 ## License
 
