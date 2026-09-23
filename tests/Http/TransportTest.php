@@ -256,7 +256,7 @@ final class TransportTest extends TestCase
      * failure.
      */
     #[Test]
-    public function an_empty_body_decodes_to_an_empty_response(): void
+    public function a_204_carries_no_body_by_definition_and_decodes_to_nothing(): void
     {
         $this->queue(204, '');
 
@@ -264,6 +264,68 @@ final class TransportTest extends TestCase
 
         $this->assertSame(204, $response->status);
         $this->assertSame([], $response->all());
+    }
+
+    /**
+     * A redirect the PSR-18 client chose not to follow reaches the decoder,
+     * because only 4xx and 5xx become exceptions first.
+     */
+    #[Test]
+    public function a_304_is_empty_by_definition_too(): void
+    {
+        $this->queue(304, '');
+
+        $this->assertSame([], $this->transport()->get('lead/lead_x/')->all());
+    }
+
+    /**
+     * Measured 2026-09-23: every endpoint answers with JSON - eighteen GETs,
+     * the smallest 13 bytes, and DELETE returns {} rather than nothing. So a
+     * 200 with no body did not come from Close.
+     *
+     * The case this guards is a test fake. Laravel's Http::fake() with no
+     * arguments answers every request with an empty 200, so a consumer's test
+     * would otherwise see list() return an empty collection and pass, while
+     * nothing had been faked at all.
+     */
+    #[Test]
+    public function an_empty_body_on_a_200_is_a_finding_not_an_empty_result(): void
+    {
+        $this->queue(200, '');
+
+        try {
+            $this->transport()->get('lead/');
+            $this->fail('Expected a DecodeException.');
+        } catch (DecodeException $e) {
+            $this->assertSame(200, $e->status());
+            $this->assertSame('', $e->body());
+            $this->assertStringContainsString('empty body', $e->getMessage());
+            $this->assertStringContainsString('test fake', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function an_empty_body_on_a_201_is_a_finding_too(): void
+    {
+        $this->queue(201, '');
+
+        $this->expectException(DecodeException::class);
+
+        $this->transport()->post('lead/', ['name' => 'x']);
+    }
+
+    /**
+     * Whitespace is not content either - a fake returning "\n" is the same
+     * failure wearing a newline.
+     */
+    #[Test]
+    public function a_body_of_only_whitespace_counts_as_empty(): void
+    {
+        $this->queue(200, "  \n  ");
+
+        $this->expectException(DecodeException::class);
+
+        $this->transport()->get('lead/');
     }
 
     #[Test]

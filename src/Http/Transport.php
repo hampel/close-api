@@ -57,6 +57,15 @@ final class Transport
      */
     private const int URL_LIMIT = 1900;
 
+    /**
+     * Statuses that carry no body by definition, per RFC 9110.
+     *
+     * 304 is reachable here because only 4xx and 5xx are turned into exceptions
+     * before decoding, so a redirect the PSR-18 client chose not to follow
+     * arrives intact.
+     */
+    private const array BODYLESS_STATUSES = [204, 304];
+
     private ?RateLimit $lastRateLimit = null;
 
     private string $baseUri;
@@ -426,11 +435,31 @@ final class Transport
      */
     private function decode(string $raw, int $status): array
     {
-        // 204 and an empty 200 are both legitimate — several deletes answer
-        // with no body at all — so an empty body decodes to an empty response
-        // rather than a parse failure.
+        // An empty body is a finding, not a value. Every endpoint measured on
+        // 2026-09-23 answers with JSON — eighteen GETs, the smallest 13 bytes,
+        // and DELETE returns `{}` rather than nothing at all. So a 200 with no
+        // body did not come from Close: it is a proxy, a captive portal, or a
+        // test fake answering everything with a bare 200. Returning [] there
+        // turns that into "no records", which is the quietest possible way to
+        // be wrong.
+        //
+        // The exception is the statuses where HTTP forbids a body. Those are
+        // empty by definition and mean exactly what they say.
         if (trim($raw) === '') {
-            return [];
+            if (in_array($status, self::BODYLESS_STATUSES, true)) {
+                return [];
+            }
+
+            throw new DecodeException(
+                sprintf(
+                    'Close API returned a %d with an empty body. No Close endpoint answers that '
+                    .'way, so the response did not come from Close - check for a proxy, or for a '
+                    .'test fake answering every request with a bare 200.',
+                    $status,
+                ),
+                $raw,
+                $status,
+            );
         }
 
         try {

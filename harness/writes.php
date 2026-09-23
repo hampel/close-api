@@ -333,7 +333,7 @@ try {
 
     $io->values([
         'delete status' => $deleted->status,
-        'delete body' => $deleted->all() === [] ? '(empty)' : implode(', ', array_keys($deleted->all())),
+        'delete body' => $deleted->all() === [] ? '{} - an empty object' : implode(', ', array_keys($deleted->all())),
     ]);
 
     // A GET straight after a DELETE has been observed returning 200: the read

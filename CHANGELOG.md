@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+
+**Changed**
+
+* A 2xx response with an empty body now raises `DecodeException` instead of
+  decoding to an empty result. No Close endpoint answers that way — every one
+  measured returns JSON, and `DELETE` returns `{}` — so an empty body means the
+  response did not come from Close. `204` and `304` are unaffected: HTTP
+  forbids a body on those
+
 ## 0.1.2 (2026-09-23)
 
 **Fixed**

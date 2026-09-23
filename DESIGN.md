@@ -376,7 +376,9 @@ property of `CreateEmailActivity` in the spec.
   differed against two leads.
 - `?query=` on `GET /lead/` is honoured too, which the package this replaced had
   no evidence for.
-- `DELETE` answers 200 with an empty body.
+- `DELETE` answers 200 with `{}` — an empty JSON object, not an empty body.
+  No endpoint measured returns an empty body at all: eighteen GETs all answered
+  with JSON, the smallest 13 bytes.
 
 
 ## Questions still open
