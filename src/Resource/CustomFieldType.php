@@ -7,8 +7,10 @@ namespace Hampel\CloseApi\Resource;
 /**
  * The object types that can carry custom fields.
  *
- * The path is `/custom_field/{type}/` — **singular**. The plural reads more
- * naturally and is not an endpoint; the OpenAPI spec settles it.
+ * The path is `/custom_field/{type}/` — **singular**, which is what the OpenAPI
+ * spec documents. The plural `custom_fields/{type}/` also answers 200 (measured
+ * 2026-09-23) but appears nowhere in the spec, so it is an undocumented alias
+ * and this package does not rely on it.
  *
  * These six are the whole set the spec defines, and they are flat. Close's prose
  * documentation describes `activity/<activity_type_id>` and

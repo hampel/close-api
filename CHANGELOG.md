@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+Unreleased
+----------
+
+**Fixed**
+
+* `Tasks::create()` rejected a payload with no `_type`, which made it stricter
+  than Close: the API accepts the omission and defaults to `lead`. The spec
+  models the body as a `oneOf` discriminated on that field, which reads as
+  required and is not. Nothing is validated there now
+
 0.1.1 (2026-09-23)
 ------------------
 

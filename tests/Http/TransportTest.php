@@ -40,8 +40,10 @@ final class TransportTest extends TestCase
     }
 
     /**
-     * Every path in the Close API ends in a slash and a request without one
-     * does not reach the endpoint it looks like it should.
+     * Every path in the Close API ends in a slash. Close answers 308 to the
+     * slashed URL when one is missing rather than failing, so normalising here
+     * saves a round trip and removes the dependency on the PSR-18 client
+     * following redirects - which PSR-18 does not require it to do.
      */
     #[Test]
     public function it_adds_the_trailing_slash_a_call_site_forgot(): void

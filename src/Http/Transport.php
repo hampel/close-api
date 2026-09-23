@@ -282,10 +282,13 @@ final class Transport
 
         $path = ltrim($path, '/');
 
-        // Every path in the Close API ends in a slash, and a request without
-        // one does not reach the endpoint it looks like it should. Adding it
-        // here rather than trusting each call site removes the whole class of
-        // bug at one point instead of guarding against it at every one.
+        // Every path in the Close API ends in a slash. Without one Close answers
+        // 308 to the slashed URL rather than failing (measured 2026-09-23), so
+        // this is not the difference between working and not - it is the
+        // difference between one request and two, and between working
+        // everywhere and working only on a PSR-18 client that follows
+        // redirects, which nothing in PSR-18 requires. Normalising here fixes
+        // it at one point rather than at every call site.
         if ($path !== '' && ! str_ends_with($path, '/')) {
             $path .= '/';
         }

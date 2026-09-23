@@ -205,6 +205,31 @@ try {
         'email (draft)' => $email['id'],
     ]);
 
+    // Required-field claims the spec makes, checked against what Close does.
+    // The spec models CreateTask as a oneOf discriminated on _type, which reads
+    // as required and is not; email status reads the same way and is. Probed
+    // through the transport, bypassing this package's own validation, because
+    // the question is what CLOSE requires.
+    $io->line();
+    $io->title('Which fields are really required?');
+
+    $probeError(
+        'task with no _type (the spec implies it is required)',
+        static fn () => $close->transport()->post('task/', [
+            'lead_id' => $lead,
+            'text' => 'ZZ DELETE ME - no _type',
+            'date' => date('Y-m-d'),
+        ]),
+    );
+
+    $probeError(
+        'email with no status',
+        static fn () => $close->transport()->post('activity/email/', [
+            'lead_id' => $lead,
+            'subject' => 'ZZ DELETE ME - no status',
+        ]),
+    );
+
     $io->line();
     $io->title('Reading back and updating');
 

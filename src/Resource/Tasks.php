@@ -60,21 +60,20 @@ final class Tasks extends Resource
     /**
      * `POST /task/`
      *
-     * `_type` is required. The spec models the payload as a oneOf discriminated
-     * on it — `lead` for an ordinary task, `outgoing_call` for a call task —
-     * and the two shapes differ, so omitting it is rejected.
+     * `_type` selects the payload shape — `lead` for an ordinary task,
+     * `outgoing_call` for a call task — and the spec models the body as a oneOf
+     * discriminated on it, which reads as though it were required.
+     *
+     * It is not. Close accepts a task with no `_type` and defaults it to `lead`
+     * (measured 2026-09-23). This method used to reject the omission on the
+     * strength of the spec, which made it stricter than the API and would have
+     * refused payloads Close has always accepted. Nothing is validated here
+     * now: the API decides.
      *
      * @param  array<string, mixed>  $attributes
      */
     public function create(array $attributes): Response
     {
-        if (! isset($attributes['_type'])) {
-            throw new InvalidArgumentException(
-                'Creating a task requires "_type" — "lead" for an ordinary task, "outgoing_call" '
-                .'for a call task. Close discriminates the payload shape on it.',
-            );
-        }
-
         return $this->insert($attributes);
     }
 

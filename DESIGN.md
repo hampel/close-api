@@ -43,9 +43,15 @@ half-typed, would invent the missing half from examples, and would silently omit
 the endpoint most consumers reach for first.
 
 One thing it settles cheaply: the custom field path is `/custom_field/{type}/`,
-**singular**. The plural is not an endpoint, and it is an easy assumption to
-make from the resource name. The types are `activity`, `contact`,
-`custom_object_type`, `lead`, `opportunity` and `shared`.
+**singular**. The types are `activity`, `contact`, `custom_object_type`,
+`lead`, `opportunity` and `shared`.
+
+What the spec does **not** settle is whether the plural works. It does —
+`custom_fields/lead/` and `custom_fields/contact/` both answer 200, measured
+2026-09-23. It is an undocumented alias the spec omits entirely, so reading the
+spec's silence as "that path does not exist" was wrong. Use the documented
+spelling, because an undocumented alias is exactly the kind of thing that stops
+working without notice; but code calling the plural is not broken today.
 
 
 API behaviour the design is a response to
@@ -348,6 +354,24 @@ Verified on 23 September 2026 against 230 leads created for the purpose:
   `id__in` filter — far past the 1,900 threshold — was sent as a POST with the
   override header and returned precisely the 100 leads asked for. The filter is
   honoured through that path, not silently dropped.
+
+### Required fields: the spec implies one that is not
+
+`POST /task/` accepts a task with **no `_type`** and defaults it to `lead`. The
+OpenAPI spec models the body as a `oneOf` discriminated on `_type`, which reads
+as though it were required — and this package rejected the omission on that
+basis until it was measured. That made it stricter than the API it wraps, and
+would have refused payloads Close has always accepted. The check is gone.
+
+`POST /activity/email/` is the opposite: **`status` really is required**, and
+omitting it answers `400 {"field-errors": {"status": "This field is
+required."}}`. That check stays.
+
+The pair is the argument for measuring rather than reading. Both claims came
+from the same document, both looked equally solid, and one was wrong.
+
+`direction` on an email create is accepted and echoed back, despite not being a
+property of `CreateEmailActivity` in the spec.
 
 ### Other things the write run confirmed
 

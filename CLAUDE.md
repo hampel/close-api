@@ -57,8 +57,10 @@ one is a design decision, not a refactor — see DESIGN.md for why.
 
 ## Conventions worth knowing before you edit
 
-- **Paths get their trailing slash added by the transport.** Every Close path ends in one and a
-  request without it does not arrive. Do not add defensive slashes at call sites.
+- **Paths get their trailing slash added by the transport.** Every Close path ends in one;
+  omitting it earns a 308 to the slashed URL, so the cost is an extra round trip and a
+  dependency on the PSR-18 client following redirects, which PSR-18 does not require. Do not add
+  defensive slashes at call sites.
 - **Query parameters are arrays, never strings in the path.** `Transport::url()` throws on a `?`.
   Lists are comma-joined by `Http\Query`, not repeated — `http_build_query` would produce
   `id__in[0]=` which Close silently ignores, returning the *unfiltered* collection.

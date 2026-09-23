@@ -75,7 +75,8 @@ final class ResourceTest extends TestCase
             'sms list' => ['GET', 'activity/sms/', fn (Close $c) => $c->messages()->list()],
             'meetings list' => ['GET', 'activity/meeting/', fn (Close $c) => $c->meetings()->list()],
 
-            // Singular, per the OpenAPI spec. The plural is not an endpoint.
+            // Singular, which is the spelling the OpenAPI spec documents. The
+            // plural is an undocumented alias that also works; we do not use it.
             'custom fields lead' => ['GET', 'custom_field/lead/', fn (Close $c) => $c->customFields(CustomFieldType::Lead)->list()],
             'custom fields contact' => ['GET', 'custom_field/contact/', fn (Close $c) => $c->customFields(CustomFieldType::Contact)->list()],
             'custom fields shared' => ['GET', 'custom_field/shared/', fn (Close $c) => $c->customFields(CustomFieldType::Shared)->list()],
@@ -231,16 +232,25 @@ final class ResourceTest extends TestCase
         $this->assertSame($expected, $methods);
     }
 
-    // _type is required on a task: the spec models CreateTask as a oneOf
-    // discriminated on it.
-
+    /**
+     * The spec models CreateTask as a oneOf discriminated on _type, which reads
+     * as though _type were required. Close accepts a task without it and
+     * defaults to "lead" - measured against the live API on 2026-09-23. This
+     * method used to reject the omission, which made the package stricter than
+     * the API it wraps.
+     */
     #[Test]
-    public function creating_a_task_without_a_type_is_refused_before_the_request(): void
+    public function a_task_without_a_type_is_sent_as_written(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('requires "_type"');
+        $this->queue(201, ['id' => 'task_new', '_type' => 'lead']);
 
         $this->close()->tasks()->create(['lead_id' => 'lead_a', 'text' => 'Call back']);
+
+        $this->assertSame(
+            ['lead_id' => 'lead_a', 'text' => 'Call back'],
+            json_decode((string) $this->request()->getBody(), true),
+            'Nothing is added, removed or validated on the way through.',
+        );
     }
 
     #[Test]
