@@ -8,6 +8,8 @@ use Hampel\CloseApi\Auth\ApiKey;
 use Hampel\CloseApi\Auth\Authentication;
 use Hampel\CloseApi\Http\DefaultRetryPolicy;
 use Hampel\CloseApi\Http\RetryPolicy;
+use Hampel\CloseApi\Http\Sleeper;
+use Hampel\CloseApi\Http\SystemSleeper;
 use Hampel\CloseApi\Http\Transport;
 use Hampel\CloseApi\Resource\Activities;
 use Hampel\CloseApi\Resource\Activity\Calls;
@@ -64,6 +66,11 @@ final class Close
      * because building an ApiKey and a Transport only to accept their defaults is
      * ceremony, and ceremony in an example is what gets copied. The PSR-17
      * factories are found when omitted; the HTTP client never is.
+     *
+     * `$retryPolicy` and `$sleeper` are the two halves of one mechanism: the
+     * policy decides how long to wait, the sleeper does the waiting. An
+     * integration that wants retries under a fake clock — so its tests do not
+     * actually sleep — replaces the second.
      */
     public static function withKey(
         #[SensitiveParameter] string $key,
@@ -72,6 +79,7 @@ final class Close
         ?StreamFactoryInterface $streamFactory = null,
         ?LoggerInterface $logger = null,
         ?RetryPolicy $retryPolicy = null,
+        ?Sleeper $sleeper = null,
     ): self {
         return self::with(
             new ApiKey($key),
@@ -80,6 +88,7 @@ final class Close
             $streamFactory,
             $logger,
             $retryPolicy,
+            $sleeper,
         );
     }
 
@@ -93,6 +102,7 @@ final class Close
         ?StreamFactoryInterface $streamFactory = null,
         ?LoggerInterface $logger = null,
         ?RetryPolicy $retryPolicy = null,
+        ?Sleeper $sleeper = null,
     ): self {
         return new self(new Transport(
             auth: $auth,
@@ -100,6 +110,7 @@ final class Close
             requestFactory: $requestFactory,
             streamFactory: $streamFactory,
             retryPolicy: $retryPolicy ?? new DefaultRetryPolicy(),
+            sleeper: $sleeper ?? new SystemSleeper(),
             logger: $logger ?? new NullLogger(),
         ));
     }

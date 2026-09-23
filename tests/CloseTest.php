@@ -6,6 +6,7 @@ namespace Hampel\CloseApi\Tests;
 
 use Hampel\CloseApi\Auth\BearerToken;
 use Hampel\CloseApi\Close;
+use Hampel\CloseApi\Http\DefaultRetryPolicy;
 use Hampel\CloseApi\Exception\InvalidArgumentException;
 use Hampel\CloseApi\Resource\Activities;
 use Hampel\CloseApi\Resource\Activity\Calls;
@@ -120,6 +121,44 @@ final class CloseTest extends TestCase
         $close->users()->me();
 
         $this->assertSame('Bearer tok_abc', $this->request()->getHeaderLine('Authorization'));
+    }
+
+    /**
+     * The policy decides how long to wait and the sleeper does the waiting, so
+     * exposing one without the other left an integration able to configure
+     * retries but not to test them without its suite really sleeping. The only
+     * way round it was to abandon the short form and build a Transport by hand.
+     */
+    #[Test]
+    public function the_short_form_takes_a_sleeper_so_retries_can_be_tested_without_waiting(): void
+    {
+        $this->queue(429, [], ['RateLimit' => 'limit=100, remaining=0, reset=30']);
+        $this->queue(200, ['id' => 'user_me']);
+
+        $started = microtime(true);
+
+        $close = Close::withKey(
+            'api_test',
+            $this->http,
+            retryPolicy: new DefaultRetryPolicy(),
+            sleeper: $this->sleeper,
+        );
+
+        $this->assertSame('user_me', $close->users()->me()['id']);
+        $this->assertSame([30.0], $this->sleeper->slept, 'It waited exactly as long as Close asked.');
+        $this->assertLessThan(
+            5.0,
+            microtime(true) - $started,
+            'And did not actually sleep for 30 seconds doing it.',
+        );
+    }
+
+    #[Test]
+    public function without_a_sleeper_the_short_form_still_builds_a_working_client(): void
+    {
+        $this->queue(200, ['id' => 'user_me']);
+
+        $this->assertSame('user_me', Close::withKey('api_test', $this->http)->users()->me()['id']);
     }
 
     #[Test]

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 0.2.0 (2026-09-23)
+
+**Added**
+
+* `Close::withKey()` and `Close::with()` take an optional `Sleeper`, so retries
+  can be driven by a test double or a framework's sleep helper without building
+  a `Transport` by hand. The retry policy was already accepted there; the
+  sleeper is the other half of the same mechanism
+
 ## 0.1.3 (2026-09-23)
 
 **Changed**

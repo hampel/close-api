@@ -185,6 +185,16 @@ Close::withKey($apiKey, $httpClient, retryPolicy: new DefaultRetryPolicy(
 `maxDelay` is a ceiling on any single wait rather than a target. If Close asks
 for longer than it, the request fails with the reason instead of blocking.
 
+The policy decides how long to wait; a `Sleeper` does the waiting. Pass one to
+test retries without a suite that really sleeps, or to wait on a framework's own
+sleep helper:
+
+```php
+use Hampel\CloseApi\Http\Sleeper;
+
+Close::withKey($apiKey, $httpClient, sleeper: $yourSleeper);
+```
+
 ## Logging
 
 Pass any PSR-3 logger. Requests and responses are logged at `debug`, retries at
