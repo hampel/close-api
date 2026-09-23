@@ -85,6 +85,7 @@ vendor/bin/rig                 # list exercises
 vendor/bin/rig inventory       # read-only: whose key is this, and is the organization empty
 vendor/bin/rig cleanup         # lists records the harness left behind; deletes on opt-in
 vendor/bin/rig writes          # CREATES AND DELETES real records; guarded twice
+vendor/bin/rig pagination      # CREATES 230 leads to page and search; guarded twice
 ```
 
 Run `inventory` before `writes`, every time. A key made in the wrong organization authenticates

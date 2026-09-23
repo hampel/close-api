@@ -307,12 +307,47 @@ So a write followed straight away by a read of the same record can disagree with
 itself, and any harness that checks its own cleanup has to wait before believing
 the answer.
 
-### Not every response carries the rate limit header
+### The rate limit header has never been seen at all
 
-A `GET` of `custom_object_type/` came back with no `RateLimit` header at all, so
-`lastRateLimit()` returning null is an ordinary outcome rather than a sign of
-trouble. Close's documentation says only that "most" responses carry it; that is
-now confirmed rather than assumed.
+This is the one finding that reads worse the longer you look at it.
+
+Close documents `RateLimit: limit=…, remaining=…, reset=…` precisely, and says
+"most API responses" carry it. Across every run here — roughly 500 requests,
+including 230 creates and 230 deletes back to back — **no response has carried
+it once**. `me/`, `lead/`, `status/lead/` and `user/` were sampled deliberately
+on the last run: absent on all four.
+
+So `lastRateLimit()` is null in practice, `RateLimit::fromHeader()` has never
+parsed a real header, and the retry-on-429 path has never run against a real
+429. None of that is broken — null is handled everywhere, and the parser is
+tested against the documented form — but the package is reading for something
+this organization's responses do not contain, and one test key is not enough to
+say whether that is true of Close generally, of this plan, or of this account.
+
+Worth asking Close rather than inferring.
+
+### Pagination, search and the long-filter override all work
+
+Verified on 23 September 2026 against 230 leads created for the purpose:
+
+- **Offset pagination walks a multi-page collection correctly.** 230 records
+  seen exactly once at a page size of 50 (five pages) and again at 200 (two
+  pages), so the loop's `_skip` advancement is right at both the ordinary case
+  and at Close's maximum `_limit`. `max` and `first()` behave.
+- **`POST /data/search/` is shaped the way the prose says.** The query tree from
+  the documentation returned exactly the 230 leads, over five cursor pages. Its
+  envelope is `{"cursor": …, "data": […]}` — `data` with **no `has_more`**,
+  which is the third shape `Response::isList()` had to learn. Had that bug not
+  been found a week earlier by an unrelated exercise, every search in this
+  package would have returned its envelope instead of its records.
+- **Cursors really do expire after 30 seconds.** Holding one for 35.2s between
+  pages produced `400 {"field-errors": {"cursor": "Expired cursor"}}`, and
+  `CursorPaginator` classified it as `CursorExpiredException` with the elapsed
+  time attached. The documented number is exact, not approximate.
+- **The `_params` / `x-http-method-override` switch works.** A 4,899-character
+  `id__in` filter — far past the 1,900 threshold — was sent as a POST with the
+  override header and returned precisely the 100 leads asked for. The filter is
+  honoured through that path, not silently dropped.
 
 ### Other things the write run confirmed
 
@@ -333,19 +368,17 @@ Questions still open
 Each is a place where the code guesses, defensibly, and would be tightened by
 one observation.
 
-1. **What does a 429 actually look like?** The `RateLimit` header is documented
-   precisely enough to parse with confidence, but no 429 has been seen, so the
-   retry path has never run against a real one. Provoking one deliberately is
-   not something to do casually against an organization someone else shares.
+1. **What does a 429 actually look like, and does Close still send the
+   `RateLimit` header?** 460 requests in a few minutes drew neither, and the
+   header was absent from every endpoint sampled. The retry path and the header
+   parser are both written from documentation alone. Provoking a 429 on purpose
+   is not something to do casually against an organization someone else shares,
+   so this is a question for Close before it is a question for the harness.
 2. **Does `Retry-After` really round `reset` up?** The documentation says so.
    `RateLimitException::waitSeconds()` prefers `reset` on that basis.
 3. **Do the endpoint groups behave as described?** Whether two paths share a
    limit is not something a client can discover except by observation.
-4. **Does the `_params` override work as documented on the endpoints this
-   package uses it for?** The mechanism is documented generally; it has not been
-   exercised against any specific endpoint.
-5. **Is `POST /data/search/` still shaped the way the prose says?** It is absent
-   from the spec, so the prose is the only description of it, and prose drifts
-   more quietly than a schema. The empty organization gave it nothing to match.
-6. **Where do the caps fall on resources other than leads?** Both are documented
-   as varying per resource; only `lead/` has been measured.
+4. **Where do the caps fall on resources other than leads?** Both are
+   documented as varying per resource; only `lead/` has been measured.
+5. **Does the 10,000-object search cap behave as documented?** Reaching it needs
+   ten thousand records, which is a different order of exercise from this one.
