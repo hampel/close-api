@@ -9,6 +9,13 @@
   a `Transport` by hand. The retry policy was already accepted there; the
   sleeper is the other half of the same mechanism
 
+**Fixed**
+
+* `CustomFields` rejected custom field ids that do not begin `cf_`. Close issues
+  `cf_` for fields created now, whatever type they belong to, but organizations
+  hold older fields whose ids begin `lcf_`, and its documentation names both
+  patterns. No prefix is checked there now — the path already fixes the type
+
 ## 0.1.3 (2026-09-23)
 
 **Changed**

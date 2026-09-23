@@ -35,9 +35,24 @@ final class CustomFields extends Resource
         return 'custom_field/'.$this->type->value;
     }
 
-    protected function prefix(): string
+    /**
+     * No prefix is checked, deliberately.
+     *
+     * A custom field created today gets `cf_`, whichever type it belongs to —
+     * measured 2026-09-23 across lead, contact, opportunity and shared. But
+     * organizations hold older fields whose ids begin `lcf_`, and Close's own
+     * documentation says ids "follow patterns like `lcf_` or `cf_`", so the
+     * prefix records the era a field was made in rather than what it is.
+     *
+     * Guarding on `cf_` therefore rejected ids Close had issued and would have
+     * answered for, and the rejection was local — the call never reached Close
+     * to be disproved. The guard exists elsewhere to catch an id belonging to
+     * another resource; here the path already fixes the type, so it was buying
+     * nothing and costing a working call.
+     */
+    protected function prefix(): ?string
     {
-        return 'cf_';
+        return null;
     }
 
     /**

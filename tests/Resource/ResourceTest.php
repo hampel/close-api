@@ -150,6 +150,46 @@ final class ResourceTest extends TestCase
         $this->close()->leads()->get('cont_abc');
     }
 
+    /**
+     * A field created today gets `cf_` whatever type it belongs to, but older
+     * organizations hold ids beginning `lcf_` — Close's documentation names
+     * both patterns. Guarding on one rejected ids Close had issued, and did it
+     * locally, so the call never reached Close to be disproved. The path
+     * already fixes the type, so the guard was buying nothing.
+     *
+     * @return list<array{string}>
+     */
+    public static function customFieldIds(): array
+    {
+        return [['cf_abc123'], ['lcf_abc123'], ['ccf_abc123'], ['scf_abc123'], ['anything_at_all']];
+    }
+
+    #[Test]
+    #[DataProvider('customFieldIds')]
+    public function a_custom_field_id_is_sent_whatever_its_prefix(string $id): void
+    {
+        $this->queue(200, ['id' => $id]);
+
+        $this->close()->customFields(CustomFieldType::Lead)->get($id);
+
+        $this->assertSame(
+            'https://api.close.com/api/v1/custom_field/lead/'.$id.'/',
+            (string) $this->request()->getUri(),
+        );
+    }
+
+    /**
+     * The empty check still applies - that one is about a mistake this package
+     * can actually diagnose.
+     */
+    #[Test]
+    public function a_custom_field_still_needs_some_id(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->close()->customFields(CustomFieldType::Lead)->get('   ');
+    }
+
     #[Test]
     public function it_refuses_an_empty_id(): void
     {
